@@ -6876,6 +6876,7 @@ export function CanvasEditor() {
                           )}
                           </div>
                       </div>
+                      </div>
                     ))}
                   </div>
 
