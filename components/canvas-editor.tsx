@@ -73,6 +73,8 @@ import {
   ExternalLink,
   BookOpen,
   Scissors,
+  Save,
+  Globe,
   Volume2,
   Mic,
 } from "lucide-react"
@@ -5967,6 +5969,7 @@ export function CanvasEditor() {
                       }}
                       className="w-full"
                     >
+                      <Save className="w-3.5 h-3.5 mr-1" />
                       Save Settings
                     </Button>
 
@@ -5996,6 +5999,7 @@ export function CanvasEditor() {
                       }}
                       title="Pull the latest OpenCartridge from GitHub, rebuild and restart"
                     >
+                      <RefreshCw className={cn('w-3.5 h-3.5 mr-1', updateStatus === 'Updating…' && 'animate-spin')} />
                       {updateStatus === 'Updating…' ? 'Updating…' : 'Update'}
                     </Button>
 
@@ -6006,6 +6010,7 @@ export function CanvasEditor() {
                       onClick={() => window.open('https://github.com/camenduru/OpenCartridge', '_blank')}
                       title="OpenCartridge on GitHub"
                     >
+                      <Globe className="w-3.5 h-3.5 mr-1" />
                       Source
                     </Button>
                     {updateStatus && updateStatus !== 'Updating…' && (
