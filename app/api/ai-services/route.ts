@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
-// OpenCartridges runs multiple local workers, each on its own port. The global
+// OpenCartridge runs multiple local workers, each on its own port. The global
 // registry (public/service-workers.json) lists every worker: a service catalog
 // file plus the API/upload URLs jobs are sent to. Each catalog entry ("catalog")
 // is either relative to public/ or an absolute filesystem path, so catalogs can

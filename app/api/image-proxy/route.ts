@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
 
     const response = await fetch(url, {
       headers: {
-        'User-Agent': 'OpenCartridges/1.0',
+        'User-Agent': 'OpenCartridge/1.0',
       },
     })
 

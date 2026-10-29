@@ -590,6 +590,11 @@ export function CanvasEditor() {
       processingTime: service.processingTime,
       delay: service.delay,
       divisible: service.divisible,
+      // Worker routing from the registry
+      worker: service.worker,
+      apiUrl: service.apiUrl,
+      uploadUrl: service.uploadUrl,
+      workerUploadUrl: service.workerUploadUrl,
       // Initialize parameter values with defaults from defaultValue
       ...Object.fromEntries(
         service.parameters.map(param => [
@@ -600,6 +605,7 @@ export function CanvasEditor() {
     }
 
     setAiServices(prev => [...prev, newService])
+
 
     // Select the newly added service
     setSelectedServiceId(service.id)
@@ -649,6 +655,7 @@ export function CanvasEditor() {
     setServiceSelectorView("services")
     setSelectedServiceForExamples(null)
   }
+
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null)
   const [draggedServiceId, setDraggedServiceId] = useState<string | null>(null)
   const [dragOverServiceId, setDragOverServiceId] = useState<string | null>(null)
@@ -2958,7 +2965,7 @@ export function CanvasEditor() {
         // For video layers, download the video file directly
         const a = document.createElement("a")
         a.href = layer.videoUrl!
-        a.download = `${layer.name.replace(/\s+/g, '_')}-OpenCartridges-${Date.now()}.mp4`
+        a.download = `${layer.name.replace(/\s+/g, '_')}-OpenCartridge-${Date.now()}.mp4`
         a.click()
         return
       }
@@ -2967,7 +2974,7 @@ export function CanvasEditor() {
         // For audio layers, download the audio file directly
         const a = document.createElement("a")
         a.href = layer.audioUrl!
-        a.download = `${layer.name.replace(/\s+/g, '_')}-OpenCartridges-${Date.now()}.mp3`
+        a.download = `${layer.name.replace(/\s+/g, '_')}-OpenCartridge-${Date.now()}.mp3`
         a.click()
         return
       }
@@ -2976,7 +2983,7 @@ export function CanvasEditor() {
         // For GLB layers, download the GLB file directly
         const a = document.createElement("a")
         a.href = layer.glbUrl!
-        a.download = `${layer.name.replace(/\s+/g, '_')}-OpenCartridges-${Date.now()}.glb`
+        a.download = `${layer.name.replace(/\s+/g, '_')}-OpenCartridge-${Date.now()}.glb`
         a.click()
         return
       }
@@ -3000,7 +3007,7 @@ export function CanvasEditor() {
        const url = URL.createObjectURL(blob)
        const a = document.createElement("a")
        a.href = url
-       a.download = `${layer.name.replace(/\s+/g, '_')}-OpenCartridges-${Date.now()}.png`
+       a.download = `${layer.name.replace(/\s+/g, '_')}-OpenCartridge-${Date.now()}.png`
        a.click()
        URL.revokeObjectURL(url)
      })
@@ -5013,10 +5020,10 @@ export function CanvasEditor() {
       <div className="border-b border-border bg-card px-4 py-3 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <img src="/logo.svg" alt="OpenCartridges Logo" className="h-8 w-8 rounded-lg" />
+            <img src="/logo.svg" alt="OpenCartridge Logo" className="h-8 w-8 rounded-lg" />
             <h1 className="text-lg font-display tracking-tight">
               <span className="text-[#ff005b]">Open</span>
-              <span className="text-[#d1fe17]">Cartridges</span>
+              <span className="text-[#d1fe17]">Cartridge</span>
             </h1>
 
             <Button
@@ -5394,7 +5401,7 @@ export function CanvasEditor() {
                                               const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve))
                                               if (!blob) return
 
-                                              // Upload to OpenCartridges cloud storage
+                                              // Upload to OpenCartridge cloud storage
                                               const formData = new FormData()
                                               formData.append('file', blob, `selected-layer-${Date.now()}.png`)
 
@@ -6473,7 +6480,7 @@ export function CanvasEditor() {
                       onClick={() => {
                         const a = document.createElement("a")
                         a.href = primarySelectedLayer.glbUrl!
-                        a.download = `${primarySelectedLayer.name.replace(' Thumbnail', '').replace(/\s+/g, '_')}-OpenCartridges-${Date.now()}.glb`
+                        a.download = `${primarySelectedLayer.name.replace(' Thumbnail', '').replace(/\s+/g, '_')}-OpenCartridge-${Date.now()}.glb`
                         a.click()
                       }}
                       disabled={selectedLayerIds.length !== 1}
@@ -6772,6 +6779,9 @@ export function CanvasEditor() {
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
+                  <p className="text-xs text-muted-foreground mb-4">
+                    To add a new cartridge: drop its <span className="font-mono text-foreground">services.json</span> into <span className="font-mono text-foreground">public/services/</span> and register it with its API port in <button className="text-[#d1fe17] underline hover:opacity-80" onClick={() => window.open('/service-workers.json', '_blank')}>public/service-workers.json</button>, then refresh the page.
+                  </p>
 
                   <div className="flex flex-wrap gap-2 mb-6">
                     {serviceCategories.map((category) => {

@@ -6,9 +6,9 @@ import { ThemeToggle } from '@/components/theme-toggle'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'OpenCartridges — Open AI Creative Suite',
+  title: 'OpenCartridge — Open AI Creative Suite',
   description:
-    'OpenCartridges is an open-source AI creative suite for generating and editing images, videos, 3D and audio — inspired by higgsfield.ai, powered by TostUI.',
+    'OpenCartridge is an open-source AI creative suite for generating and editing images, videos, 3D and audio — inspired by higgsfield.ai, powered by TostUI.',
   icons: {
     icon: '/icon.svg',
   },

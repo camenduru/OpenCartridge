@@ -1,8 +1,8 @@
-# ⚡ OpenCartridges
+# ⚡ OpenCartridge
 
-**OpenCartridges** is an open-source, **local-first** AI creative suite UI — a canvas-first workspace for generating and editing **images, videos, 3D and audio** entirely through your own locally running AI cartridges. It is built on top of [camenduru's TostUI](https://github.com/camenduru/TostUI) and restyled with the visual language of [higgsfield.ai](https://higgsfield.ai): near-black surfaces, white type, a lime `#d1fe17` accent, and editorial serif headlines.
+**OpenCartridge** is an open-source, **local-first** AI creative suite UI — a canvas-first workspace for generating and editing **images, videos, 3D and audio** entirely through your own locally running AI cartridges. It is built on top of [camenduru's TostUI](https://github.com/camenduru/TostUI) and restyled with the visual language of [higgsfield.ai](https://higgsfield.ai): near-black surfaces, white type, a lime `#d1fe17` accent, and editorial serif headlines.
 
-![OpenCartridges](public/logo.svg)
+![OpenCartridge](public/logo.svg)
 
 ## ✨ What's inside
 
@@ -25,7 +25,7 @@ Open http://localhost:3000
 
 ### Configuration
 
-OpenCartridges talks only to your local services. Every worker is registered in the global registry **`public/service-workers.json`**, which maps each cartridge catalog to its ports. `/api/ai-services` merges all registered catalogs and the cartridges panel shows every cartridge; each job (and its input uploads) is routed to the worker its cartridge belongs to.
+OpenCartridge talks only to your local services. Every worker is registered in the global registry **`public/service-workers.json`**, which maps each cartridge catalog to its ports. `/api/ai-services` merges all registered catalogs and the cartridges panel shows every cartridge; each job (and its input uploads) is routed to the worker its cartridge belongs to.
 
 ```json
 [
@@ -38,7 +38,7 @@ OpenCartridges talks only to your local services. Every worker is registered in 
 - `apiUrl` — the worker's `/run` / `/runsync` / `/status/{id}` API
 - `uploadUrl` — the MinIO server that input layers are uploaded to
 
-To add a worker: drop its `services.json` somewhere reachable, add one entry to the registry, restart OpenCartridges. Bundled catalogs currently ship for [tostui-3x3-sprite-sheet](../tostui-3x3-sprite-sheet) (sheet generation + animation) and [tostui-loop-hero-style](../tostui-loop-hero-style) (Loop Hero pixel-art style).
+To add a worker: drop its `services.json` somewhere reachable, add one entry to the registry, restart OpenCartridge. Bundled catalogs currently ship for [tostui-3x3-sprite-sheet](../tostui-3x3-sprite-sheet) (sheet generation + animation) and [tostui-loop-hero-style](../tostui-loop-hero-style) (Loop Hero pixel-art style).
 
 The **Global Configuration** panel (Layers sidebar) holds the default API/upload URLs, used by any service that does not declare its own.
 
@@ -47,11 +47,11 @@ The **Global Configuration** panel (Layers sidebar) holds the default API/upload
 | `OPENHIGGS_SERVICES_URL` / `TOST_AI_SERVICES_URL` | Optional extra remote JSON catalog, merged with the registry |
 | `NEXT_PUBLIC_OPENHIGGS_LOCAL_API_SERVICES` / `NEXT_PUBLIC_TOST_UI_LOCAL_API_SERVICES` | Comma-separated service IDs to show; unset = show all |
 
-OpenCartridges-specific variables take precedence; the original TostUI variables keep working so existing docker templates need no changes.
+OpenCartridge-specific variables take precedence; the original TostUI variables keep working so existing docker templates need no changes.
 
 ## 🍞 Base templates (TostUI / TostEngine)
 
-OpenCartridges uses the same local docker templates as TostUI — run any of them and connect at `http://localhost:8000`:
+OpenCartridge uses the same local docker templates as TostUI — run any of them and connect at `http://localhost:8000`:
 
 | Template | Notes |
 | --- | --- |
@@ -80,4 +80,4 @@ See the [TostUI README](https://github.com/camenduru/TostUI) for the full templa
 
 ## 📄 License
 
-MIT — see [LICENSE](./LICENSE) (© camenduru). OpenCartridges restyling and branding are provided under the same license.
+MIT — see [LICENSE](./LICENSE) (© camenduru). OpenCartridge restyling and branding are provided under the same license.
