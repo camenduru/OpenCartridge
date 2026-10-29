@@ -14,15 +14,34 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Forward the request to the local API server
-    const response = await fetch(`${localApiUrl}/run`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'accept': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    })
+    // A worker can briefly refuse connections (restart, model reload, load
+    // spike) — retry a few times before giving up.
+    let lastError: unknown = null
+    let response: Response | null = null
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        response = await fetch(`${localApiUrl}/run`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'accept': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        })
+        break
+      } catch (error) {
+        lastError = error
+        if (attempt < 2) await new Promise((r) => setTimeout(r, 1500))
+      }
+    }
+
+    if (!response) {
+      console.error('Error proxying to local API after retries:', lastError)
+      return NextResponse.json(
+        { error: 'Failed to connect to local API server' },
+        { status: 502 }
+      )
+    }
 
     const data = await response.json()
 
