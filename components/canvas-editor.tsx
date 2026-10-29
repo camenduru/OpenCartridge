@@ -274,6 +274,7 @@ export function CanvasEditor() {
   const [forceRedraw, setForceRedraw] = useState(0)
   const [textFileContents, setTextFileContents] = useState<Record<string, string>>({})
   const [uiScale, setUiScale] = useState<number>(80)
+  const [updateStatus, setUpdateStatus] = useState<string | null>(null)
 
   // Cache for background removal models
   const [bgRemovalModels, setBgRemovalModels] = useState<{model: any, processor: any} | null>(null)
@@ -5968,6 +5969,39 @@ export function CanvasEditor() {
                     >
                       Save Settings
                     </Button>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      disabled={updateStatus === 'Updating…'}
+                      onClick={async () => {
+                        setUpdateStatus('Updating…')
+                        try {
+                          const res = await fetch('/api/update', { method: 'POST' })
+                          const data = await res.json()
+                          if (!data.ok) {
+                            setUpdateStatus(data.error || 'Update failed')
+                            return
+                          }
+                          if (data.updated) {
+                            setUpdateStatus(data.message || 'Updated — reloading…')
+                            setTimeout(() => window.location.reload(), 3500)
+                          } else {
+                            setUpdateStatus(data.message || 'Already up to date')
+                          }
+                        } catch {
+                          setUpdateStatus('Update failed — check the server log')
+                        }
+                      }}
+                      title="Pull the latest OpenCartridge from GitHub, rebuild and restart"
+                    >
+                      <RefreshCw className={cn('w-3.5 h-3.5 mr-1', updateStatus === 'Updating…' && 'animate-spin')} />
+                      {updateStatus === 'Updating…' ? 'Updating…' : 'Update Cartridges'}
+                    </Button>
+                    {updateStatus && updateStatus !== 'Updating…' && (
+                      <p className="text-[10px] text-muted-foreground text-center">{updateStatus}</p>
+                    )}
                   </div>
                 )}
 </div>
