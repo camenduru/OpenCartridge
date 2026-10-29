@@ -5996,8 +5996,17 @@ export function CanvasEditor() {
                       }}
                       title="Pull the latest OpenCartridge from GitHub, rebuild and restart"
                     >
-                      <RefreshCw className={cn('w-3.5 h-3.5 mr-1', updateStatus === 'Updating…' && 'animate-spin')} />
                       {updateStatus === 'Updating…' ? 'Updating…' : 'Update'}
+                    </Button>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => window.open('https://github.com/camenduru/OpenCartridge', '_blank')}
+                      title="OpenCartridge on GitHub"
+                    >
+                      Source
                     </Button>
                     {updateStatus && updateStatus !== 'Updating…' && (
                       <p className="text-[10px] text-muted-foreground text-center">{updateStatus}</p>
