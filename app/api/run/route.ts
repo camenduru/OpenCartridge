@@ -15,23 +15,40 @@ export async function POST(request: NextRequest) {
     }
 
     // A worker can briefly refuse connections (restart, model reload, load
-    // spike) — retry a few times before giving up.
+    // spike) — retry a few times before giving up. Also try the alternate
+    // host form (127.0.0.1 <-> host.docker.internal), because the URL that
+    // works for the browser may not work from inside a container and the
+    // other way around.
+    const candidates: string[] = [localApiUrl]
+    try {
+      const u = new URL(localApiUrl)
+      if (u.hostname === '127.0.0.1' || u.hostname === 'localhost') {
+        u.hostname = 'host.docker.internal'
+        candidates.push(u.toString())
+      } else if (u.hostname === 'host.docker.internal') {
+        u.hostname = 'localhost'
+        candidates.push(u.toString())
+      }
+    } catch {}
+
     let lastError: unknown = null
     let response: Response | null = null
-    for (let attempt = 0; attempt < 3; attempt++) {
-      try {
-        response = await fetch(`${localApiUrl}/run`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'accept': 'application/json',
-          },
-          body: JSON.stringify(payload),
-        })
-        break
-      } catch (error) {
-        lastError = error
-        if (attempt < 2) await new Promise((r) => setTimeout(r, 1500))
+    outer: for (const candidate of candidates) {
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          response = await fetch(`${candidate}/run`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'accept': 'application/json',
+            },
+            body: JSON.stringify(payload),
+          })
+          break outer
+        } catch (error) {
+          lastError = error
+          if (attempt < 1) await new Promise((r) => setTimeout(r, 1200))
+        }
       }
     }
 

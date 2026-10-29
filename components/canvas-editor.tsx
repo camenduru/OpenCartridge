@@ -3752,16 +3752,29 @@ export function CanvasEditor() {
         // Job queued on the local worker - /status long-polls until the job finishes
         setTimeout(async () => {
           try {
-            const statusResponse = await fetch(`/api/status/${result.id}`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ localApiUrl: service.apiUrl }),
-            })
-
-            if (statusResponse.ok) {
-              const statusResult = await statusResponse.json()
+            const candidates = [service.apiUrl]
+            try {
+              const u = new URL(service.apiUrl)
+              if (u.hostname === '127.0.0.1' || u.hostname === 'localhost') { u.hostname = 'host.docker.internal' } else { u.hostname = '127.0.0.1' }
+              candidates.push(u.toString())
+            } catch {}
+            let statusResult: any = null
+            let statusRes: Response | null = null
+            for (const candidate of candidates) {
+              try {
+                const statusResponse = await fetch(`/api/status/${result.id}`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ localApiUrl: candidate }),
+                })
+                statusRes = statusResponse
+                statusResult = await statusResponse.json()
+                break
+              } catch (e) {
+                if (candidates.indexOf(candidate) === candidates.length - 1) throw e
+              }
+            }
+            if (statusResult) {
               if (statusResult.status === "COMPLETED" && statusResult.output?.result) {
                 setServiceJobs(prev => prev.map(j => j.id === jobId ? {
                   ...j,
