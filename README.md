@@ -11,38 +11,40 @@
 - 🖼️ **Image & video generation, editing, upscaling** via local worker dockers
 - 🧊 **3D viewer** — GLB preview powered by `@google/model-viewer`
 - 🎵 **Audio** — waveform overlay and song generation cartridges
-- 🗄️ **Shared MinIO** — one storage server for all workers' inputs and outputs
+- 🗄️ **MinIO inside** — the container ships its own MinIO storage and creates the public `tost` and `test` buckets on startup
+- 🔄 **Self-update** — the Global Configuration panel has an Update button that pulls the latest source from GitHub, rebuilds and restarts
 - 🏠 **100% local** — no cloud account, no credits
 - 🌗 **Dark-first theme** inspired by higgsfield.ai (light mode included)
 
-## 🚀 Quick start
+## 🚀 Quick start (from source)
 
 ```bash
 pnpm install
 pnpm dev
 ```
 
-Open http://localhost:3010
+Open http://localhost:3010 — then add your workers as cartridges (see 🧩 Adding cartridges).
 
-## 🗄️ Shared storage (MinIO)
+## ▶️ Run with Docker (recommended)
 
-All workers share one MinIO server for inputs and outputs. Build and run the bundled appliance:
+The `camenduru/opencartridge` image is self-contained: the UI **and** its own MinIO storage. On startup it creates the public `tost` and `test` buckets automatically (credentials `tost` / `tosttost`), so the worker containers need no separate storage server.
 
 ```bash
-docker build -t camenduru/minio-old .
-docker run -d --name openhiggs-minio --restart unless-stopped \
-  -p 9000:9000 -p 9001:9001 \
-  -v openhiggs-minio-data:/content/data \
-  camenduru/minio-old
+docker build -t camenduru/opencartridge docker/
+
+docker run -d --name opencartridge --restart unless-stopped \
+  -p 3000:3000 -p 9000:9000 -p 9001:9001 \
+  -v opencartridge-data:/content/data \
+  camenduru/opencartridge
 ```
 
-This creates public `tost` and `test` buckets automatically (credentials `tost` / `tosttost`, matching the workers). Console: http://localhost:9001.
+- UI: http://localhost:3000
+- MinIO S3 API: http://localhost:9000 (bucket `tost`, anonymous read/write)
+- MinIO console: http://localhost:9001 (login `tost` / `tosttost`)
 
 ## 🎮 Workers
 
-The backend of every cartridge is [ComfyUI](https://github.com/comfy-org/comfyui) — the worker dockers run ComfyUI graphs headlessly behind a small job API (`/run`, `/runsync`, `/status/{id}`).
-
-Run each worker pointed at the shared MinIO (`s3_endpoint_url=http://host.docker.internal:9000`):
+The backend of every cartridge is [ComfyUI](https://github.com/comfy-org/comfyui) — the worker dockers run ComfyUI graphs headlessly behind a small job API (`/run`, `/runsync`, `/status/{id}`). Start each worker pointed at the MinIO inside the OpenCartridge container (`s3_endpoint_url=http://host.docker.internal:9000`):
 
 ```bash
 # 3x3 Sprite Sheet — sheet generation (Qwen Image 2.1 Edit) + walk-cycle animation (MiniMax H3)
@@ -82,6 +84,10 @@ Every worker is registered in the global registry **`public/service-workers.json
 - `workerUploadUrl` — the same MinIO as seen from inside the worker container (used for the object link handed to the worker)
 
 To add a worker: drop its `services.json` somewhere reachable, add one entry to the registry, restart OpenCartridge. Bundled catalogs currently ship for [tostui-3x3-sprite-sheet](../tostui-3x3-sprite-sheet) (sheet generation + animation) and [tostui-loop-hero-style](../tostui-loop-hero-style) (Loop Hero pixel-art style).
+
+## 🔄 Updating
+
+The Global Configuration panel has an **Update Cartridges** button (POST `/api/update`): it pulls the latest source from this GitHub repository, rebuilds and restarts the server — no image rebuild needed for UI changes. For a durable update, rebuild the image with `--build-arg CACHEBUST=$(date +%s)` (see the notes in `docker/Dockerfile`).
 
 ## 🙏 Credits
 

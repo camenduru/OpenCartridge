@@ -5997,7 +5997,7 @@ export function CanvasEditor() {
                       title="Pull the latest OpenCartridge from GitHub, rebuild and restart"
                     >
                       <RefreshCw className={cn('w-3.5 h-3.5 mr-1', updateStatus === 'Updating…' && 'animate-spin')} />
-                      {updateStatus === 'Updating…' ? 'Updating…' : 'Update Cartridges'}
+                      {updateStatus === 'Updating…' ? 'Updating…' : 'Update'}
                     </Button>
                     {updateStatus && updateStatus !== 'Updating…' && (
                       <p className="text-[10px] text-muted-foreground text-center">{updateStatus}</p>
