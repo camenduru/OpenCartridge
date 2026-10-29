@@ -99,13 +99,6 @@ const ModelViewer = dynamic(() => import('@google/model-viewer').then(() => {
 // Import services from local lib
 import { loadAiServices, getCategoryColor, getCategoryIcon, type AIService } from "@/lib/ai-services"
 
-// Local API allowed services; when unset, every service in the catalog is offered
-const openHiggsLocalApiServicesEnv =
-  process.env.NEXT_PUBLIC_OPENHIGGS_LOCAL_API_SERVICES ?? process.env.NEXT_PUBLIC_TOST_UI_LOCAL_API_SERVICES
-const OPENHIGGS_LOCAL_API_SERVICES: string[] | null = openHiggsLocalApiServicesEnv
-  ? openHiggsLocalApiServicesEnv.split(',')
-  : null
-
 type LayerType = 'image' | 'text' | 'video' | 'audio' | 'glb'
 
 interface MediaFile {
@@ -115,6 +108,7 @@ interface MediaFile {
   lastModified: string
   type: string
 }
+
 
 interface Layer {
     id: string
@@ -524,7 +518,7 @@ export function CanvasEditor() {
   const [selectedServiceForExamples, setSelectedServiceForExamples] = useState<AIService | null>(null)
 
   // Allowed services based on use local api toggle
-  const allowedServices = OPENHIGGS_LOCAL_API_SERVICES ?? availableServices.map(s => s.id)
+  const allowedServices = availableServices.map(s => s.id)
 
   // Filtered services for the selector
   const filteredAvailableServices = availableServices.filter((service) => {
@@ -825,7 +819,7 @@ export function CanvasEditor() {
 
   // Initialize AI services for the local API
   useEffect(() => {
-    const allowedServices = OPENHIGGS_LOCAL_API_SERVICES ?? availableServices.map(s => s.id)
+    const allowedServices = availableServices.map(s => s.id)
 
     const filteredServices = availableServices
       .filter(service => allowedServices.includes(service.id))
@@ -5021,7 +5015,7 @@ export function CanvasEditor() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <img src="/logo.svg" alt="OpenCartridge Logo" className="h-8 w-8 rounded-lg" />
-            <h1 className="text-lg font-display tracking-tight">
+            <h1 className="text-xl font-display font-bold tracking-tight leading-none">
               <span className="text-[#ff005b]">Open</span>
               <span className="text-[#d1fe17]">Cartridge</span>
             </h1>
@@ -6779,9 +6773,6 @@ export function CanvasEditor() {
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
-                  <p className="text-xs text-muted-foreground mb-4">
-                    To add a new cartridge: drop its <span className="font-mono text-foreground">services.json</span> into <span className="font-mono text-foreground">public/services/</span> and register it with its API port in <button className="text-[#d1fe17] underline hover:opacity-80" onClick={() => window.open('/service-workers.json', '_blank')}>public/service-workers.json</button>, then refresh the page.
-                  </p>
 
                   <div className="flex flex-wrap gap-2 mb-6">
                     {serviceCategories.map((category) => {
@@ -6813,15 +6804,18 @@ export function CanvasEditor() {
                     {filteredAvailableServices.map((service) => (
                       <div
                         key={service.id}
-                        className="relative cursor-pointer transition-all hover:brightness-95 bg-[#d1fe17]"
-                        style={{ clipPath: "polygon(0 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 14px 100%, 0 calc(100% - 14px))" }}
+                        className="relative cursor-pointer transition-all duration-200 hover:-translate-y-2"
+                        style={{ filter: "drop-shadow(0 16px 18px rgba(0,0,0,0.5))" }}
                         onClick={() => handleViewExamples(service)}
                       >
-                        <div className="px-4 pt-3 space-y-1.5">
+                        <div className="absolute top-0 -right-[14px] w-[14px] h-full bg-[#6b8700]" style={{ transform: "skewY(45deg)", transformOrigin: "top left" }} />
+                        <div className="absolute -bottom-[14px] left-0 w-full h-[14px] bg-[#5f7a00]" style={{ transform: "skewX(45deg)", transformOrigin: "top left" }} />
+                        <div className="relative bg-[#d1fe17] rounded-t-md">
+                        <div className="px-3.5 pt-2.5 space-y-1.5">
                           <div className="h-1.5 rounded-full bg-[#0b0b0d]/70" />
                           <div className="h-1.5 rounded-full bg-[#0b0b0d]/70" />
                         </div>
-                        <div className="m-3 mt-2.5 rounded-md bg-[#0b0b0d] p-3">
+                        <div className="m-2.5 mt-2 rounded-md bg-[#0b0b0d] p-2.5">
                           <div className="flex items-start gap-3">
                           <div className={`p-2 rounded-lg ${getCategoryColor(service.category)} flex-shrink-0`}>
                             {(() => {
@@ -6880,7 +6874,7 @@ export function CanvasEditor() {
                               <Plus className="w-3 h-3 text-[#0b0b0d]/50" />
                             </div>
                           )}
-                        </div>
+                          </div>
                       </div>
                     ))}
                   </div>

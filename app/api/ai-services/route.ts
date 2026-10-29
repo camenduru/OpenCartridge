@@ -3,7 +3,7 @@ import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
 // OpenCartridge runs multiple local workers, each on its own port. The global
-// registry (public/service-workers.json) lists every worker: a service catalog
+// registry (public/service-workers.json) lists every worker: a cartridge catalog
 // file plus the API/upload URLs jobs are sent to. Each catalog entry ("catalog")
 // is either relative to public/ or an absolute filesystem path, so catalogs can
 // also be loaded straight from another project directory.
@@ -34,15 +34,15 @@ async function loadCatalog(entry: WorkerEntry): Promise<any[]> {
     const raw = await fs.readFile(catalogPath, 'utf8')
     const data = JSON.parse(raw)
     if (!Array.isArray(data)) return []
-    return data.map((service: any) => ({
-      ...service,
+    return data.map((cartridge: any) => ({
+      ...cartridge,
       worker: entry.name ?? entry.id,
       apiUrl: entry.apiUrl,
       uploadUrl: entry.uploadUrl,
       workerUploadUrl: entry.workerUploadUrl,
     }))
   } catch (error) {
-    console.error(`Failed to load service catalog for worker "${entry.id}":`, error)
+    console.error(`Failed to load cartridge catalog for worker "${entry.id}":`, error)
     return []
   }
 }
@@ -50,30 +50,11 @@ async function loadCatalog(entry: WorkerEntry): Promise<any[]> {
 export async function GET() {
   const registry = await loadRegistry()
   const catalogs = await Promise.all(registry.map(loadCatalog))
-  const bundled = catalogs.flat()
-
-  // Optional extra remote catalog (OPENHIGGS_SERVICES_URL or legacy
-  // TOST_AI_SERVICES_URL); bundled entries win on id conflicts.
-  let remote: any[] = []
-  const url = process.env.OPENHIGGS_SERVICES_URL ?? process.env.TOST_AI_SERVICES_URL
-  if (url) {
-    try {
-      const response = await fetch(url)
-      if (response.ok) {
-        const data = await response.json()
-        if (Array.isArray(data)) remote = data
-      }
-    } catch (error) {
-      console.error('Failed to fetch remote AI services:', error)
-    }
-  }
-
-  const bundledIds = new Set(bundled.map((service: any) => service.id))
-  const merged = [...remote.filter((service: any) => !bundledIds.has(service.id)), ...bundled]
+  const merged = catalogs.flat()
 
   if (merged.length === 0) {
     return NextResponse.json(
-      { error: 'No cartridges available: public/service-workers.json has no workers, their catalogs failed to load, and no remote catalog is configured' },
+      { error: 'No cartridges available: public/service-workers.json has no workers, or their catalogs failed to load' },
       { status: 500 }
     )
   }
