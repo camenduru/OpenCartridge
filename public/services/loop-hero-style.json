@@ -1,0 +1,237 @@
+[
+  {
+    "home": true,
+    "id": "loop-hero-style",
+    "name": "Loop Hero Style",
+    "description": "Turn a character reference into a Loop Hero pixel-art render: dithered dark-fantasy palette, crisp pixel edges, colors matched back to the reference.",
+    "category": "image",
+    "icon": "Image",
+    "inputTypes": [
+      "image"
+    ],
+    "workerId": "",
+    "cost": "0.1",
+    "processingTime": "60",
+    "delay": "12000",
+    "overview": "Krea 2 Turbo at 1 MP in two passes. Pass 1 rides the HQ detail LoRA and the Loop Hero style LoRA on the reference's own latents; pass 2 samples one step on the bare model with those latents dropped, so LoRA artifacts settle without pulling the photo's palette back in. An MKL color match re-anchors the result on your reference.",
+    "divisible": 32,
+    "examples": {
+      "input": [
+        "https://examples.tost.ai/45453242421432343.jpg"
+      ],
+      "output": [
+        "https://examples.tost.ai/45453242421432343i.jpg"
+      ]
+    },
+    "parameters": [
+      {
+        "name": "job_id",
+        "type": "string",
+        "label": "Job ID",
+        "required": false,
+        "defaultValue": "",
+        "ui": false
+      },
+      {
+        "name": "input_image",
+        "type": "file",
+        "label": "Reference Image",
+        "required": true,
+        "ui": false
+      },
+      {
+        "name": "prompt",
+        "type": "string",
+        "label": "Style Prompt",
+        "required": true,
+        "defaultValue": "Loop Hero pixel art style, detailed dithering, dark fantasy color palette, high quality",
+        "ui": true
+      },
+      {
+        "name": "seed",
+        "type": "number",
+        "label": "Seed",
+        "defaultValue": 0,
+        "ui": true
+      },
+      {
+        "name": "style_lora_strength",
+        "type": "slider",
+        "label": "Style Strength",
+        "defaultValue": 1,
+        "min": 0,
+        "max": 2,
+        "step": 0.05,
+        "ui": true
+      },
+      {
+        "name": "lora_strength",
+        "type": "slider",
+        "label": "Detail Strength",
+        "defaultValue": 0.8,
+        "min": 0,
+        "max": 2,
+        "step": 0.05,
+        "ui": true
+      },
+      {
+        "name": "split_step",
+        "type": "slider",
+        "label": "Split Step",
+        "defaultValue": 8,
+        "min": 1,
+        "max": 20,
+        "step": 1,
+        "ui": true
+      },
+      {
+        "name": "megapixels",
+        "type": "slider",
+        "label": "Megapixels",
+        "defaultValue": 1,
+        "min": 0.25,
+        "max": 2,
+        "step": 0.25,
+        "ui": true
+      },
+      {
+        "name": "color_match",
+        "type": "boolean",
+        "label": "Color Match",
+        "defaultValue": true,
+        "ui": true
+      },
+      {
+        "name": "color_match_method",
+        "type": "select",
+        "label": "Color Match Method",
+        "defaultValue": "mkl",
+        "options": [
+          "mkl",
+          "wavelet",
+          "adain",
+          "hm",
+          "reinhard",
+          "mvgd",
+          "hm-mvgd-hm",
+          "hm-mkl-hm"
+        ],
+        "ui": false
+      },
+      {
+        "name": "cfg",
+        "type": "slider",
+        "label": "CFG",
+        "defaultValue": 1,
+        "min": 0,
+        "max": 10,
+        "step": 0.1,
+        "ui": false
+      },
+      {
+        "name": "sampler_name",
+        "type": "select",
+        "label": "Sampler",
+        "defaultValue": "er_sde",
+        "options": [
+          "er_sde",
+          "euler",
+          "dpmpp_2m"
+        ],
+        "ui": false
+      },
+      {
+        "name": "scheduler_pass1",
+        "type": "select",
+        "label": "Scheduler Pass 1",
+        "defaultValue": "sgm_uniform",
+        "options": [
+          "sgm_uniform",
+          "simple",
+          "normal",
+          "beta"
+        ],
+        "ui": false
+      },
+      {
+        "name": "scheduler_pass2",
+        "type": "select",
+        "label": "Scheduler Pass 2",
+        "defaultValue": "simple",
+        "options": [
+          "simple",
+          "sgm_uniform",
+          "normal",
+          "beta"
+        ],
+        "ui": false
+      },
+      {
+        "name": "total_steps",
+        "type": "number",
+        "label": "Total Steps (0 = split + 1)",
+        "defaultValue": 0,
+        "ui": false
+      },
+      {
+        "name": "kv_cache",
+        "type": "boolean",
+        "label": "Reference K/V Cache",
+        "defaultValue": true,
+        "ui": false
+      },
+      {
+        "name": "lora_name",
+        "type": "string",
+        "label": "Detail LoRA",
+        "defaultValue": "KREA2HighQuality.safetensors",
+        "ui": false
+      },
+      {
+        "name": "style_lora_name",
+        "type": "string",
+        "label": "Style LoRA",
+        "defaultValue": "Loop_hero__game__style.safetensors",
+        "ui": false
+      },
+      {
+        "name": "blur_radius",
+        "type": "number",
+        "label": "Blur Radius",
+        "defaultValue": 1,
+        "ui": false
+      },
+      {
+        "name": "blur_sigma",
+        "type": "slider",
+        "label": "Blur Sigma",
+        "defaultValue": 1,
+        "min": 0,
+        "max": 10,
+        "step": 0.1,
+        "ui": false
+      },
+      {
+        "name": "upscale_method",
+        "type": "select",
+        "label": "Scale Method",
+        "defaultValue": "bicubic",
+        "options": [
+          "bicubic",
+          "bilinear",
+          "area",
+          "nearest-exact",
+          "lanczos"
+        ],
+        "ui": false
+      },
+      {
+        "name": "resolution_steps",
+        "type": "number",
+        "label": "Resolution Steps",
+        "defaultValue": 1,
+        "ui": false
+      }
+    ]
+  }
+]
