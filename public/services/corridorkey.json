@@ -35,7 +35,7 @@
         "name": "output",
         "type": "select",
         "label": "Output",
-        "defaultValue": "alpha",
+        "defaultValue": "cutout",
         "options": [
           "alpha",
           "cutout"
@@ -109,7 +109,15 @@
         ],
         "ui": false
       }
-    ]
+    ],
+    "examples": {
+      "input": [
+        "https://examples.tost.ai/1793150564865.jpg"
+      ],
+      "output": [
+        "https://examples.tost.ai/1793150564865a.png"
+      ]
+    }
   },
   {
     "home": true,
@@ -221,6 +229,14 @@
         ],
         "ui": false
       }
-    ]
+    ],
+    "examples": {
+      "input": [
+        "https://examples.tost.ai/1793150564865.mp4"
+      ],
+      "output": [
+        "https://examples.tost.ai/1793150564865a.mp4"
+      ]
+    }
   }
 ]
