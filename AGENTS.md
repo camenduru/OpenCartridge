@@ -319,6 +319,9 @@ corridorkey, `8003` idol. **Next free port is 8004.**
 - `id` is the join key: `/api/ai-services` stamps it on every cartridge as `workerId`.
 - `port` = inside the container, `hostPort` = published. They may differ (loop-hero-style is 8000 → 8001).
 - `ulimits` mirrors `docker run --ulimit name=value` (soft and hard both set), e.g. `{"memlock": 67108864}`.
+- `extraHosts` mirrors `docker run --add-host`. The app adds `host.docker.internal:host-gateway` to every worker it
+  creates on its own, so `s3_endpoint_url=http://host.docker.internal:9000` resolves inside the worker on Linux too;
+  the field only exists to add more names.
 - `${NAME}` is expanded from OpenCartridge's own environment; everything else is literal.
 - Without `container` the cartridge still lists, but cannot be installed/started/deleted from the UI.
 - The browser never supplies any of this — `lib/docker.mjs` only acts on the registry spec.
@@ -333,9 +336,10 @@ cd <worker source> && docker build -t camenduru/my-worker .
 docker run -d --name my-worker --gpus all -p 8004:8004 -e s3_access_key_id=tost … camenduru/my-worker
 docker ps --filter name=my-worker        # (healthy)
 
-# 2. the handler answers
+# 2. the handler answers (from the HOST: 127.0.0.1. host.docker.internal only
+#    means something inside a container)
 curl -s localhost:8004/run -H 'Content-Type: application/json' \
-  -d '{"input":{"input_image":"http://host.docker.internal:9000/tost/in.jpg"}}'
+  -d '{"input":{"input_image":"http://localhost:9000/tost/in.jpg"}}'
 curl -s -X POST localhost:8004/status/<id>     # COMPLETED + output.result
 
 # 3. the artifact is real, not just a URL
@@ -374,6 +378,7 @@ When a new catalog ships, **add** a frozen copy under `tests/fixtures/cartridges
 | A `.webp` example renders as a URL string | the examples viewer whitelists extensions — it now accepts webp/gif/avif like the rest |
 | New file in `public/` 404s until restart | Next resolves `public/` at server start |
 | Job completes, no layer appears | result extension unknown to the UI and no `returns.layer` declared |
+| Cartridge dot sits on amber **Starting…** forever | app container cannot resolve `host.docker.internal` (Linux `docker run` without `--add-host=host.docker.internal:host-gateway`); the container is up and healthy, the app just cannot see it — `lib/worker-url.mjs` falls back to the bridge gateway, the README carries the flag |
 | 3×3 sheet lanes drift between frames | the sheet prompt and video prompt must describe the *same* grid; keep the walk prompt's per-cell lines intact |
 
 ---

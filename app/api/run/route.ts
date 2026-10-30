@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { workerUrlCandidates } from '@/lib/worker-url.mjs'
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,21 +16,11 @@ export async function POST(request: NextRequest) {
     }
 
     // A worker can briefly refuse connections (restart, model reload, load
-    // spike) — retry a few times before giving up. Also try the alternate
-    // host form (127.0.0.1 <-> host.docker.internal), because the URL that
-    // works for the browser may not work from inside a container and the
-    // other way around.
-    const candidates: string[] = [localApiUrl]
-    try {
-      const u = new URL(localApiUrl)
-      if (u.hostname === '127.0.0.1' || u.hostname === 'localhost') {
-        u.hostname = 'host.docker.internal'
-        candidates.push(u.toString())
-      } else if (u.hostname === 'host.docker.internal') {
-        u.hostname = 'localhost'
-        candidates.push(u.toString())
-      }
-    } catch {}
+    // spike) — retry a few times before giving up. Also try every host form the
+    // worker may be reachable on (127.0.0.1 / host.docker.internal / the bridge
+    // gateway), because the URL that works for the browser is rarely the one
+    // that works from inside a container.
+    const candidates = await workerUrlCandidates(localApiUrl)
 
     let lastError: unknown = null
     let response: Response | null = null

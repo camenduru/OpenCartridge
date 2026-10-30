@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import http from 'node:http'
 import https from 'node:https'
+import { workerUrlCandidates } from '@/lib/worker-url.mjs'
 
 // RunPod's /status blocks until the job has finished, which for image-to-video
 // work can take many minutes. Next's global fetch (undici) aborts on headers
@@ -45,12 +46,27 @@ export async function POST(
     const { jobId } = await params
     const { localApiUrl } = await request.json()
 
-    const { statusCode, body } = await postJson(`${localApiUrl}/status/${jobId}`)
+    if (!localApiUrl || typeof localApiUrl !== 'string' || !localApiUrl.startsWith('http')) {
+      return NextResponse.json(
+        { error: 'This cartridge has no worker URL — refresh the page to reload the cartridge registry' },
+        { status: 400 }
+      )
+    }
 
-    return new NextResponse(body, {
-      status: statusCode,
-      headers: { 'Content-Type': 'application/json' },
-    })
+    // Same candidate list as /api/run: whichever host form reaches the worker.
+    let lastError: unknown = null
+    for (const base of await workerUrlCandidates(localApiUrl)) {
+      try {
+        const { statusCode, body } = await postJson(`${base}/status/${jobId}`)
+        return new NextResponse(body, {
+          status: statusCode,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      } catch (error) {
+        lastError = error
+      }
+    }
+    throw lastError ?? new Error(`no reachable URL for ${localApiUrl}`)
   } catch (error) {
     console.error('Error proxying status request to local API:', error)
     return NextResponse.json({ error: 'Failed to connect to local API server' }, { status: 500 })

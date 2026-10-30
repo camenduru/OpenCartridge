@@ -16,6 +16,7 @@ import {
   startContainer,
   stopContainer,
 } from '@/lib/docker.mjs'
+import { workerUrlCandidates } from '@/lib/worker-url.mjs'
 
 // Live state of every worker in the registry, plus the controls the Add
 // Cartridge popup needs: download & run when the image is absent, start/stop
@@ -39,6 +40,7 @@ type WorkerEntry = {
     command?: string[]
     env?: Record<string, string>
     restart?: string
+    extraHosts?: string[]
   }
 }
 
@@ -79,20 +81,38 @@ function specFor(entry: WorkerEntry) {
     command: container.command ?? [],
     env: expandEnv(container.env),
     restart: container.restart,
+    // Workers are handed `http://host.docker.internal:9000` as their MinIO
+    // endpoint (s3_endpoint_url, and the input URL they must download), so the
+    // name has to resolve inside the worker too. Linux Docker does not create
+    // it; `host-gateway` maps it to the host, the same name Docker Desktop
+    // provides for free.
+    extraHosts: ['host.docker.internal:host-gateway', ...(container.extraHosts ?? [])],
   }
 }
 
-/** Any 2xx within a short window means the worker is answering. */
+/**
+ * Any 2xx within a short window means the worker is answering. Every host form
+ * the worker could be reachable on is tried in parallel, so a launcher that
+ * forgot `--add-host=host.docker.internal:host-gateway` does not leave a healthy
+ * container labelled "Starting…" forever, and a hung worker costs one 1.5 s
+ * window rather than one per form.
+ */
 async function reachable(apiUrl: string): Promise<boolean> {
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), 1500)
+  const attempts = (await workerUrlCandidates(apiUrl)).map(async (candidate) => {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 1500)
+    try {
+      const response = await fetch(candidate, { signal: controller.signal, cache: 'no-store' })
+      if (!response.ok) throw new Error(`${candidate}: ${response.status}`)
+    } finally {
+      clearTimeout(timer)
+    }
+  })
   try {
-    const response = await fetch(apiUrl, { signal: controller.signal, cache: 'no-store' })
-    return response.ok
+    await Promise.any(attempts)
+    return true
   } catch {
     return false
-  } finally {
-    clearTimeout(timer)
   }
 }
 

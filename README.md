@@ -32,13 +32,27 @@ https://github.com/user-attachments/assets/4c323c93-db7b-40b9-a6d3-7b48e577aef1
 **2. Start OpenCartridge**
 
 ```powershell
-docker run -d --name opencartridge --restart unless-stopped -p 3000:3000 -p 9000:9000 -p 9001:9001 -v opencartridge-data:/content/data -v /var/run/docker.sock:/var/run/docker.sock camenduru/opencartridge
+docker run -d --name opencartridge --restart unless-stopped --add-host=host.docker.internal:host-gateway -p 3000:3000 -p 9000:9000 -p 9001:9001 -v opencartridge-data:/content/data -v /var/run/docker.sock:/var/run/docker.sock camenduru/opencartridge
 ```
 
 Open **http://localhost:3000**. That is the whole setup — no worker containers to start by hand.
 
+`--add-host=host.docker.internal:host-gateway` is **not optional on Linux**. Workers are addressed as
+`host.docker.internal:<port>` in `public/service-workers.json`, a name Docker Desktop for Windows/macOS creates for
+you but plain Linux Docker does not. Without it the app can still pull, create and start worker containers, but can
+never reach them: every cartridge sits on **Starting…** forever and every job fails with
+`Failed to connect to local API server`.
+
 `-v opencartridge-data:/content/data` is the MinIO storage: generated renders and uploaded inputs live there, so they
 survive recreating the container. `docker volume rm opencartridge-data` clears them.
+
+`-v /var/run/docker.sock:/var/run/docker.sock` gives the app its container controls; on Docker Desktop for Windows
+write it as `-v //var/run/docker.sock:/var/run/docker.sock`.
+
+Reaching it from another machine on your network works as-is: `http://<host-ip>:3000`. The browser only ever talks to
+the app's own origin — worker calls, uploads and result files are all proxied server-side — so no `localhost` or
+`host.docker.internal` address ever has to mean anything to the client. Note that MinIO on `:9000` is published too and
+its bucket is public read/write, and the app itself has no authentication: keep `3000` and `9000` on a trusted network.
 
 ## 💾 Cartridges
 
@@ -56,7 +70,8 @@ container, points it at the built-in MinIO and starts it. No `docker run`, no en
 
 | State | Dot | What you can do |
 |---|---|---|
-| running | 🟢 | **Stop**, **Delete** |
+| running, answering | 🟢 | **Stop**, **Delete** |
+| running, unreachable | 🟡 **Starting…** | check the `--add-host` flag above; **Stop** |
 | stopped / downloaded | 🟡 | **Start**, **Delete** |
 | not installed | 🔴 | **Download & run** (progress shown on the card) |
 

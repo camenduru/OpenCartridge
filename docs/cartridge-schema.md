@@ -156,6 +156,12 @@ container spec the app is allowed to act on.
 - `port` is the port the worker listens on inside its container; `hostPort` is what gets published. Without the socket
   mounted, `apiUrl` is just probed and the controls are hidden.
 - `ulimits` mirrors `docker run --ulimit name=value` (soft and hard both set), e.g. `{"memlock": 67108864}`.
+- `extraHosts` mirrors `docker run --add-host name:host-gateway`. The app always adds
+  `host.docker.internal:host-gateway` itself, because `s3_endpoint_url` and the input URL the worker downloads both use
+  that name and plain Linux Docker does not resolve it; the field only exists to add more.
+- `apiUrl` may be written as `host.docker.internal`, `127.0.0.1` or a real remote host. The app tries the loopback
+  twin and the bridge gateway before reporting a worker unreachable (`lib/worker-url.mjs`), so an install that was
+  started without the alias flag still works.
 
 ## Deprecation ledger
 
