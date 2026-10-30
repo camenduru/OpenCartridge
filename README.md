@@ -29,12 +29,8 @@
 
 **2. Start OpenCartridge**
 
-```bash
-docker run -d --name opencartridge --restart unless-stopped \
-  -p 3000:3000 -p 9000:9000 -p 9001:9001 \
-  -v opencartridge-data:/content/data \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  camenduru/opencartridge
+```powershell
+docker run -d --name opencartridge --restart unless-stopped -p 3000:3000 -p 9000:9000 -p 9001:9001 -v opencartridge-data:/content/data -v /var/run/docker.sock:/var/run/docker.sock camenduru/opencartridge
 ```
 
 Open **http://localhost:3000**. That is the whole setup — no worker containers to start by hand.
