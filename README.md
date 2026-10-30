@@ -77,9 +77,17 @@ docker run -d --name corridorkey --gpus all -p 8002:8002 \
   -e s3_region_name=us-east-1 -e s3_bucket_name=tost -e s3_bucket_folder=output \
   camenduru/corridorkey \
   python worker_runpod.py --port 8002 --host 0.0.0.0
+
+# Idol 3D — one image to a 3D model (Idol, TripoSplat architecture, meshed to GLB)
+docker run -d --name idol --gpus all -p 8003:8003 \
+  -e s3_access_key_id=tost -e s3_secret_access_key=tosttost \
+  -e s3_endpoint_url=http://host.docker.internal:9000 \
+  -e s3_region_name=us-east-1 -e s3_bucket_name=tost -e s3_bucket_folder=output \
+  camenduru/idol \
+  python worker_runpod.py --rp_serve_api --rp_api_port 8003 --rp_api_host 0.0.0.0 --rp_log_level INFO
 ```
 
-Requires an NVIDIA GPU with ~24 GB VRAM (tested on RTX 3090). The workers load their models at startup (~35 s) before the API answers. CorridorKey needs far less — 4 GB for footage up to 1440p, 6 GB for 4K — but it loads its ~4.8 GB of weights per job, so the first key takes ~30 s.
+Requires an NVIDIA GPU with ~24 GB VRAM (tested on RTX 3090). The ComfyUI-based workers load their models at startup (~35 s) before the API answers. CorridorKey needs far less — 4 GB for footage up to 1440p, 6 GB for 4K — but it loads its ~4.8 GB of weights per job, so the first key takes ~30 s. Idol 3D imports ComfyUI on its first job and keeps the loaded weights warm afterwards; a 50-step image takes ~60 s and returns a ~28 MB GLB at the default mesh resolution.
 
 ## 🧩 Adding cartridges
 
