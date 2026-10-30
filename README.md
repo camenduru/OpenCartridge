@@ -19,9 +19,14 @@
 - 🧊 **3D** — GLB preview and orbiting viewer
 - 🎵 **Audio** — waveform overlay and generation cartridges
 - 🗄️ **MinIO inside** — the container ships its own object storage; nothing else to install
+- 🔄 **Self-updating UI** — the Global Configuration panel pulls the latest source, rebuilds and restarts the app from inside itself
 - 🏠 **100% local** — no cloud account, no credits
 
 ## 🚀 Run
+
+**1. Install Docker** — download [Docker Desktop (Windows AMD64)](https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe) and run it. Wait until the whale icon says Docker is running.
+
+**2. Start OpenCartridge**
 
 ```bash
 docker run -d --name opencartridge --restart unless-stopped \
@@ -32,8 +37,6 @@ docker run -d --name opencartridge --restart unless-stopped \
 ```
 
 Open **http://localhost:3000**. That is the whole setup — no worker containers to start by hand.
-
-From source instead: `pnpm install && pnpm dev` → http://localhost:3010.
 
 - MinIO API `:9000` (public bucket `tost`), console `:9001` (`tost` / `tosttost`)
 - `-v /var/run/docker.sock` lets the UI manage worker containers. It grants Docker API access, i.e. root on the
@@ -56,43 +59,14 @@ ports, command, env) comes from `public/service-workers.json` and is never taken
 Requires an NVIDIA GPU (~24 GB VRAM is enough for the current workers). The first run of a worker downloads its image
 — a few GB — and the first job loads its models.
 
-## 🧩 Adding a cartridge
-
-Add one entry to `public/service-workers.json`:
-
-```json
-{
-  "id": "my-worker",
-  "name": "My Worker",
-  "catalog": "services/my-worker.json",
-  "apiUrl": "http://host.docker.internal:8010",
-  "uploadUrl": "http://localhost:9000",
-  "workerUploadUrl": "http://host.docker.internal:9000",
-  "container": {
-    "name": "my-worker",
-    "image": "camenduru/my-worker:latest",
-    "port": 8010,
-    "gpus": true
-  }
-}
-```
-
-`catalog` points at the cartridge JSON (bundled in `public/services/` or an absolute path). With `container`, the
-UI can install and control it; without it, the cartridge is listed but run manually. Format, versioning and the
-compatibility promise (old cartridges keep working in new UIs) are in [docs/cartridge-schema.md](./docs/cartridge-schema.md);
-`npm test` runs the frozen-catalog suite.
-
-## 🔄 Updating
-
-**Global Configuration → Update Cartridges** pulls the latest source, rebuilds and restarts the server. For a durable
-update, rebuild the image with `--build-arg CACHEBUST=$(date +%s)` (see `docker/Dockerfile`).
-
 ## 🙏 Credits
 
 - [TostUI](https://github.com/camenduru/TostUI) by [camenduru](https://x.com/camenduru) — application code, cartridge protocol and worker dockers
 - [ComfyUI](https://github.com/comfy-org/comfyui) — the backend inside most workers
+- [MinIO](https://github.com/minio/minio) — the S3-compatible object storage that ships inside the container
 - [CorridorKey 2.0](https://github.com/camenduru/CorridorKey2.0) — matting by Zachary Harris with Corridor Digital
-- [Idol](https://github.com/Nynxz/ComfyUI-Idol) — one image to 3D gaussian splat, by Speridlabs
+- [Idol](https://github.com/speridlabs/idol-sdk) — one image to 3D gaussian splat, by Speridlabs
+- [ComfyUI-Idol](https://github.com/Nynxz/ComfyUI-Idol) — the ComfyUI node pack and converted weights the worker runs
 
 ## 📄 License
 
