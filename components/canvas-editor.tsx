@@ -586,6 +586,10 @@ export function CanvasEditor() {
   const [workerStates, setWorkerStates] = useState<Record<string, any>>({})
   const [dockerAvailable, setDockerAvailable] = useState<boolean | null>(null)
   const [workerNotice, setWorkerNotice] = useState<string | null>(null)
+  // Optimistic feedback: the action a worker was just asked to perform, until a
+  // poll confirms the new state. Without this a Start/Stop click looks ignored
+  // for the ~4 s it takes the daemon to report back.
+  const [pendingWorkerAction, setPendingWorkerAction] = useState<Record<string, string>>({})
 
   const refreshWorkerStates = useCallback(async () => {
     try {
@@ -596,6 +600,21 @@ export function CanvasEditor() {
       const next: Record<string, any> = {}
       for (const worker of data.workers ?? []) next[worker.id] = worker
       setWorkerStates(next)
+
+      // Drop the optimistic label once the daemon reports the expected state.
+      setPendingWorkerAction((prev) => {
+        const entries = Object.entries(prev)
+        if (entries.length === 0) return prev
+        const remaining: Record<string, string> = {}
+        for (const [id, action] of entries) {
+          const settled =
+            (action === "stop" && next[id]?.state === "stopped") ||
+            ((action === "start" || action === "install") && next[id]?.state === "running") ||
+            (action === "delete" && (next[id]?.state === "missing" || next[id]?.state === "ready"))
+          if (!settled) remaining[id] = action
+        }
+        return remaining
+      })
     } catch {
       // no live state: the popup still lists the static catalogs
     }
@@ -609,6 +628,7 @@ export function CanvasEditor() {
   }, [showServiceSelector, showParametersPanel, refreshWorkerStates])
 
   const controlWorker = async (workerId: string, action: "install" | "start" | "stop" | "delete") => {
+    setPendingWorkerAction((prev) => ({ ...prev, [workerId]: action }))
     try {
       const response = await fetch("/api/workers", {
         method: "POST",
@@ -617,12 +637,34 @@ export function CanvasEditor() {
       })
       const data = await response.json().catch(() => ({}))
       if (!response.ok) {
+        setPendingWorkerAction((prev) => {
+          const next = { ...prev }
+          delete next[workerId]
+          return next
+        })
         setWorkerNotice(String(data?.error ?? `request failed (${response.status})`))
         return
       }
       setWorkerNotice(null)
+      // A pull can take minutes: poll sooner than the idle interval while it runs.
       void refreshWorkerStates()
+      setTimeout(() => { void refreshWorkerStates() }, 1200)
+      // Safety net: never leave a "Stopping…" label stuck if the daemon stops
+      // reporting (engine restart, socket dropped, etc.).
+      setTimeout(() => {
+        setPendingWorkerAction((prev) => {
+          if (prev[workerId] !== action) return prev
+          const next = { ...prev }
+          delete next[workerId]
+          return next
+        })
+      }, 120000)
     } catch (error) {
+      setPendingWorkerAction((prev) => {
+        const next = { ...prev }
+        delete next[workerId]
+        return next
+      })
       setWorkerNotice(`Failed to reach OpenCartridge: ${String(error)}`)
     }
   }
@@ -7124,6 +7166,18 @@ export function CanvasEditor() {
                                   return (
                                     <p className="mt-2 text-[10px] text-muted-foreground truncate">
                                       {worker.task.action === "install" ? "Downloading" : "Pulling"} {percent} · {worker.task.detail}
+                                    </p>
+                                  )
+                                }
+                                const pending = pendingWorkerAction[worker.id]
+                                if (pending) {
+                                  const verb = pending === "stop" ? "Stopping"
+                                    : pending === "start" ? "Starting"
+                                      : pending === "delete" ? "Deleting" : "Downloading"
+                                  return (
+                                    <p className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                                      <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+                                      {verb}…
                                     </p>
                                   )
                                 }
