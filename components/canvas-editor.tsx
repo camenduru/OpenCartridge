@@ -607,7 +607,7 @@ export function CanvasEditor() {
     return () => clearInterval(timer)
   }, [showServiceSelector, refreshWorkerStates])
 
-  const controlWorker = async (workerId: string, action: "install" | "start" | "stop") => {
+  const controlWorker = async (workerId: string, action: "install" | "start" | "stop" | "delete") => {
     try {
       const response = await fetch("/api/workers", {
         method: "POST",
@@ -7121,22 +7121,42 @@ export function CanvasEditor() {
                                     : worker.state === "stopped" ? "start"
                                       : worker.state === "missing" || worker.state === "ready" ? "install"
                                         : null
-                                if (!action) return null
                                 const actionLabel = action === "stop" ? "Stop"
                                   : action === "start" ? "Start"
                                     : worker.state === "ready" ? "Run" : "Download & run"
+                                const canDelete = worker.state === "running" || worker.state === "stopped" || worker.state === "ready"
                                 return (
-                                  <Button
-                                    size="sm"
-                                    variant={action === "stop" ? "outline" : "default"}
-                                    className="mt-2 h-7 px-2 text-[11px]"
-                                    onClick={(event) => {
-                                      event.stopPropagation()
-                                      void controlWorker(worker.id, action)
-                                    }}
-                                  >
-                                    {actionLabel}
-                                  </Button>
+                                  <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+                                    {action && (
+                                      <Button
+                                        size="sm"
+                                        variant={action === "stop" ? "outline" : "default"}
+                                        className="h-7 px-2 text-[11px]"
+                                        onClick={(event) => {
+                                          event.stopPropagation()
+                                          void controlWorker(worker.id, action)
+                                        }}
+                                      >
+                                        {actionLabel}
+                                      </Button>
+                                    )}
+                                    {canDelete && (
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="h-7 px-2 text-[11px] text-red-300 border-red-500/40 hover:bg-red-500/10 hover:text-red-200"
+                                        title={`Delete the container and the ${worker.image} image`}
+                                        onClick={(event) => {
+                                          event.stopPropagation()
+                                          if (window.confirm(`Delete ${worker.image}?\n\nThe container is removed and the image has to be downloaded again before this cartridge can run.`)) {
+                                            void controlWorker(worker.id, "delete")
+                                          }
+                                        }}
+                                      >
+                                        Delete
+                                      </Button>
+                                    )}
+                                  </div>
                                 )
                               })()}
                               {service.category === "image" && service.examples?.output && service.examples.output.length > 0 && (

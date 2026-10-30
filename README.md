@@ -112,10 +112,12 @@ With the Docker socket mounted, every cartridge card shows its worker's state an
 | red | image not installed | **Download & run** — pulls, creates and starts, with pull progress on the card |
 | grey | Docker not mounted, or the worker is not in the registry | — |
 
+**Delete** sits next to those whenever the image is present: it force-removes the container and then the image, after a confirmation that says the download has to happen again. The cartridge stays listed — it just returns to the red "Download & run" state.
+
 `/api/workers` is the whole surface: `GET` returns `{docker, workers:[{id, state, reachable, image, containerId, task}]}`,
-`POST {id, action}` accepts `install`, `start`, `stop`, `restart` and `pull`. The container spec always comes from
+`POST {id, action}` accepts `install`, `start`, `stop`, `restart`, `delete` and `pull`. The container spec always comes from
 `public/service-workers.json` — image, ports, command and env are never accepted from the browser — and the Docker
-client in `lib/docker.mjs` exposes no exec, remove or volume operations.
+client in `lib/docker.mjs` exposes no exec, volume or network operations.
 
 ## 🧩 Adding cartridges
 

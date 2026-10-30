@@ -119,6 +119,43 @@ never fatal — the cartridge still lists, still dispatches, and renders with th
 fallbacks above. Current vocabulary: `layer.*`, `param.*`, `result.declared`,
 `result.suffix`.
 
+## Worker registry
+
+`public/service-workers.json` is the install manifest: one entry per worker, pointing at its catalog and carrying the
+container spec the app is allowed to act on.
+
+```json
+{
+  "id": "idol",
+  "name": "Idol",
+  "catalog": "services/idol.json",
+  "apiUrl": "http://host.docker.internal:8003",
+  "uploadUrl": "http://localhost:9000",
+  "workerUploadUrl": "http://host.docker.internal:9000",
+  "container": {
+    "name": "idol",
+    "image": "camenduru/idol:latest",
+    "port": 8003,
+    "hostPort": 8003,
+    "gpus": true,
+    "command": ["python", "/content/worker_runpod.py", "--rp_serve_api", "--rp_api_port", "8003"],
+    "env": {
+      "s3_access_key_id": "${s3_access_key_id}",
+      "s3_endpoint_url": "http://host.docker.internal:9000"
+    }
+  }
+}
+```
+
+- `id` is the join key: `/api/ai-services` stamps it onto every cartridge as `workerId`.
+- `container` is optional. Without it the cartridge still works; it just cannot be installed, started, stopped or
+  deleted from the UI.
+- `env` values of the form `${NAME}` are read from OpenCartridge's own environment, everything else is literal.
+- The spec is the only thing the Docker client will act on — no image, port, command or env value is ever taken from
+  the browser.
+- `port` is the port the worker listens on inside its container; `hostPort` is what gets published. Without the socket
+  mounted, `apiUrl` is just probed and the controls are hidden.
+
 ## Deprecation ledger
 
 | Field | Status |

@@ -10,6 +10,8 @@ import {
   imagePresent,
   listContainers,
   pullImage,
+  removeContainer,
+  removeImage,
   restartContainer,
   startContainer,
   stopContainer,
@@ -191,6 +193,16 @@ export async function POST(request: Request) {
       if (!existing) return NextResponse.json({ error: 'container does not exist yet' }, { status: 409 })
       await restartContainer(existing.id)
       return NextResponse.json({ ok: true })
+    }
+
+    if (action === 'delete') {
+      // Free the disk: drop the container (force, even if running) and then the
+      // image itself. The cartridge stays listed; it simply becomes installable
+      // again.
+      const containerRemoved = existing ? (await removeContainer(existing.id)).removed : false
+      const image = await removeImage(spec.image)
+      tasks.delete(id)
+      return NextResponse.json({ ok: true, containerRemoved, imageRemoved: image.removed })
     }
 
     if (action === 'pull' || action === 'install') {
