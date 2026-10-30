@@ -2954,25 +2954,60 @@ export function CanvasEditor() {
     saveToHistory(newLayers, [])
   }
   
+  // Downloads keep their real container: a cutout render is VP9 WebM, and
+  // saving it as .mp4 hands back a file no player will open by extension.
+  const downloadExtension = (url: string, mime: string, fallback: string) => {
+    const byMime: Record<string, string> = {
+      "video/webm": "webm",
+      "video/mp4": "mp4",
+      "video/quicktime": "mov",
+      "audio/mpeg": "mp3",
+      "audio/wav": "wav",
+      "audio/x-wav": "wav",
+      "audio/ogg": "ogg",
+    }
+    if (byMime[mime]) return byMime[mime]
+    // Result layers point at /api/image-proxy?url=…, so the extension lives in
+    // the query string, not at the end of the path.
+    const match = decodeURIComponent(url.split("#")[0]).match(/\.([a-z0-9]{2,5})(?:[?&]|$)/i)
+    return match ? match[1].toLowerCase() : fallback
+  }
+
+  const downloadLayerFile = async (url: string, baseName: string, fallbackExt: string) => {
+    const fallback = downloadExtension(url, "", fallbackExt)
+    let ext = fallback
+    try {
+      const blob = await (await fetch(url)).blob()
+      ext = downloadExtension(url, blob.type, fallback)
+      const objectUrl = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = objectUrl
+      a.download = `${baseName}.${ext}`
+      a.click()
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 10000)
+      return
+    } catch {
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `${baseName}.${ext}`
+      a.click()
+    }
+  }
+
   const exportLayer = (layerId: string) => {
       const layer = layers.find(l => l.id === layerId)
       if (!layer) return
+      const baseName = `${layer.name.replace(/\s+/g, '_')}-OpenCartridge-${Date.now()}`
 
       if (layer.type === 'video' && layer.videoUrl) {
-        // For video layers, download the video file directly
-        const a = document.createElement("a")
-        a.href = layer.videoUrl!
-        a.download = `${layer.name.replace(/\s+/g, '_')}-OpenCartridge-${Date.now()}.mp4`
-        a.click()
+        // Download the video file directly, under its own extension.
+        void downloadLayerFile(layer.videoUrl, baseName, "mp4")
         return
       }
 
       if (layer.type === 'audio' && layer.audioUrl) {
-        // For audio layers, download the audio file directly
-        const a = document.createElement("a")
-        a.href = layer.audioUrl!
-        a.download = `${layer.name.replace(/\s+/g, '_')}-OpenCartridge-${Date.now()}.mp3`
-        a.click()
+        // Download the audio file directly, under its own extension.
+        void downloadLayerFile(layer.audioUrl, baseName, "mp3")
         return
       }
 
@@ -2980,7 +3015,7 @@ export function CanvasEditor() {
         // For GLB layers, download the GLB file directly
         const a = document.createElement("a")
         a.href = layer.glbUrl!
-        a.download = `${layer.name.replace(/\s+/g, '_')}-OpenCartridge-${Date.now()}.glb`
+        a.download = `${baseName}.glb`
         a.click()
         return
       }
