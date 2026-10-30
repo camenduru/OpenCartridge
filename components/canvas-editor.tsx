@@ -3430,9 +3430,15 @@ export function CanvasEditor() {
     const startImageParam = service.parameters.find((p: any) => p.name === 'start_image' && p.ui === false)
     const endImageParam = service.parameters.find((p: any) => p.name === 'end_image' && p.ui === false)
     const inputAudioParam = service.parameters.find((p: any) => p.name === 'input_audio' && p.ui === false)
+    const inputVideoParam = service.parameters.find((p: any) => p.name === 'input_video' && p.ui === false)
   
     let inputLayers: Layer[] = []
-    if (inputAudioParam) {
+    if (inputVideoParam) {
+      // Clip cartridges key the whole file, so they take a video layer and the
+      // video itself is uploaded instead of the frame drawn on the canvas.
+      if (!primarySelectedLayer || primarySelectedLayer.type !== 'video') return
+      inputLayers = [primarySelectedLayer]
+    } else if (inputAudioParam) {
       // Service requires 1 audio layer
       if (!primarySelectedLayer || primarySelectedLayer.type !== 'audio') return
       inputLayers = [primarySelectedLayer]
@@ -3526,7 +3532,9 @@ export function CanvasEditor() {
             const inputImageCheckParam = service.parameters.find((p: any) => p.name === 'input_image_check' && p.ui === false)
             const inputAudioParam = service.parameters.find((p: any) => p.name === 'input_audio' && p.ui === false)
 
-            if (inputImageParam) {
+            if (inputVideoParam) {
+              paramName = 'input_video'
+            } else if (inputImageParam) {
               paramName = 'input_image'
             } else if (inputImage1Param) {
               paramName = 'input_image1'
@@ -3563,7 +3571,12 @@ export function CanvasEditor() {
               }
 
               let blob: Blob | null = null
-              if (layer.type === 'audio' && layer.audioUrl) {
+              if (inputVideoParam && layer.type === 'video' && layer.videoUrl) {
+                // Upload the clip itself — keying a single frame of it is not
+                // what a clip cartridge is for.
+                const videoResponse = await fetch(layer.videoUrl)
+                blob = await videoResponse.blob()
+              } else if (layer.type === 'audio' && layer.audioUrl) {
                 // For audio layers, fetch the audio blob directly
                 const response = await fetch(layer.audioUrl)
                 blob = await response.blob()
@@ -3577,7 +3590,7 @@ export function CanvasEditor() {
               // object URL handed to the worker uses the worker's own view of
               // that MinIO so it can download the input from inside its container.
               const formData = new FormData()
-              const ext = layer.type === 'audio' ? 'mp3' : 'png'
+              const ext = layer.type === 'audio' ? 'mp3' : (inputVideoParam && layer.type === 'video' ? 'mp4' : 'png')
               formData.append('file', blob, `selected-layer-${i + 1}.${ext}`)
               formData.append('localUploadUrl', service.uploadUrl)
               if (service.workerUploadUrl) {

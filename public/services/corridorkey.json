@@ -35,12 +35,12 @@
         "name": "output",
         "type": "select",
         "label": "Output",
-        "defaultValue": "cutout",
+        "defaultValue": "alpha",
         "options": [
-          "cutout",
           "alpha",
           "fg",
-          "checker"
+          "checker",
+          "cutout"
         ],
         "ui": true
       },
@@ -173,12 +173,12 @@
         "name": "output",
         "type": "select",
         "label": "Output",
-        "defaultValue": "cutout",
+        "defaultValue": "alpha",
         "options": [
-          "cutout",
           "alpha",
           "fg",
-          "checker"
+          "checker",
+          "cutout"
         ],
         "ui": true
       },
@@ -218,6 +218,137 @@
         "max": 1,
         "step": 0.05,
         "ui": true
+      },
+      {
+        "name": "low_vram",
+        "type": "boolean",
+        "label": "Low VRAM",
+        "defaultValue": false,
+        "ui": false
+      },
+      {
+        "name": "hann_chunk",
+        "type": "number",
+        "label": "Window Size (0 = auto)",
+        "defaultValue": 0,
+        "ui": false
+      },
+      {
+        "name": "hann_stride",
+        "type": "number",
+        "label": "Window Stride (0 = half)",
+        "defaultValue": 0,
+        "ui": false
+      },
+      {
+        "name": "stage2_batch",
+        "type": "number",
+        "label": "Stage 2 Batch",
+        "defaultValue": 1,
+        "ui": false
+      },
+      {
+        "name": "seed",
+        "type": "number",
+        "label": "Seed",
+        "defaultValue": 0,
+        "ui": false
+      },
+      {
+        "name": "start_mode",
+        "type": "select",
+        "label": "Start Mode",
+        "defaultValue": "begin",
+        "options": [
+          "begin",
+          "middle",
+          "random_middle"
+        ],
+        "ui": false
+      }
+    ]
+  },
+  {
+    "home": true,
+    "id": "corridorkey-clip",
+    "name": "CorridorKey Clip",
+    "description": "Key a whole clip: drop a video layer and CorridorKey 2.0 returns the animated matte, foreground or comp at native resolution.",
+    "category": "video",
+    "icon": "Video",
+    "inputTypes": [
+      "video"
+    ],
+    "workerId": "",
+    "cost": "0",
+    "processingTime": "180",
+    "delay": "12000",
+    "overview": "The clip cartridge uploads the video layer itself instead of a still, so the windowed stage-1/stage-2 pass runs over every frame and the motion stays temporally consistent. Alpha comes back as an 8-bit H.264 matte you can drop straight onto the canvas, foreground as despilled RGB, checker as a comp, and cutout as a transparent VP9 WebM.",
+    "divisible": 32,
+    "parameters": [
+      {
+        "name": "job_id",
+        "type": "string",
+        "label": "Job ID",
+        "required": false,
+        "defaultValue": "",
+        "ui": false
+      },
+      {
+        "name": "input_video",
+        "type": "file",
+        "label": "Source Clip",
+        "required": true,
+        "ui": false
+      },
+      {
+        "name": "output",
+        "type": "select",
+        "label": "Output",
+        "defaultValue": "alpha",
+        "options": [
+          "alpha",
+          "fg",
+          "checker",
+          "cutout"
+        ],
+        "ui": true
+      },
+      {
+        "name": "despill_strength",
+        "type": "slider",
+        "label": "Despill",
+        "defaultValue": 0.5,
+        "min": 0,
+        "max": 1,
+        "step": 0.05,
+        "ui": true
+      },
+      {
+        "name": "model_scale",
+        "type": "slider",
+        "label": "Model Scale",
+        "defaultValue": 1,
+        "min": 0.25,
+        "max": 1,
+        "step": 0.05,
+        "ui": true
+      },
+      {
+        "name": "hint_quality",
+        "type": "slider",
+        "label": "Hint Trust",
+        "defaultValue": 0.95,
+        "min": 0,
+        "max": 1,
+        "step": 0.05,
+        "ui": false
+      },
+      {
+        "name": "carry_hint",
+        "type": "boolean",
+        "label": "Carry Hint",
+        "defaultValue": true,
+        "ui": false
       },
       {
         "name": "low_vram",
