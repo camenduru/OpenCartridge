@@ -99,7 +99,8 @@ Every worker is registered in the global registry **`public/service-workers.json
 [
   { "id": "3x3-sprite-sheet", "name": "3x3 Sprite Sheet", "catalog": "services/3x3-sprite-sheet.json", "apiUrl": "http://127.0.0.1:8000", "uploadUrl": "http://localhost:9000", "workerUploadUrl": "http://host.docker.internal:9000" },
   { "id": "loop-hero-style",  "name": "Loop Hero Style",  "catalog": "services/loop-hero-style.json",  "apiUrl": "http://127.0.0.1:8001", "uploadUrl": "http://localhost:9000", "workerUploadUrl": "http://host.docker.internal:9000" },
-  { "id": "corridorkey",      "name": "CorridorKey 2.0",  "catalog": "services/corridorkey.json",      "apiUrl": "http://127.0.0.1:8002", "uploadUrl": "http://localhost:9000", "workerUploadUrl": "http://host.docker.internal:9000" }
+  { "id": "corridorkey",      "name": "CorridorKey 2.0",  "catalog": "services/corridorkey.json",      "apiUrl": "http://127.0.0.1:8002", "uploadUrl": "http://localhost:9000", "workerUploadUrl": "http://host.docker.internal:9000" },
+  { "id": "idol",             "name": "Idol",             "catalog": "services/idol.json",             "apiUrl": "http://127.0.0.1:8003", "uploadUrl": "http://localhost:9000", "workerUploadUrl": "http://host.docker.internal:9000" }
 ]
 ```
 
