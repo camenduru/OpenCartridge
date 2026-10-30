@@ -44,6 +44,15 @@ Open **http://localhost:3000**. That is the whole setup — no worker containers
 Open **💾 Cartridges**, pick a cartridge and press **Download & run** — the app pulls the worker image, creates its
 container, points it at the built-in MinIO and starts it. No `docker run`, no env vars, no ports to wire up.
 
+**Available**
+
+- **3x3 Sprite Sheet** *(image)* — build a 3x3 turnaround sprite sheet (eight isometric facings, empty center box, transparent background) from one character reference
+- **3x3 Sprite Sheet Animation** *(video)* — animate an existing 3x3 sprite sheet: all eight figures walk in place, in their own cell, as one loopable clip with audio
+- **Loop Hero Style** *(image)* — turn a character reference into a Loop Hero pixel-art render: dithered dark-fantasy palette, crisp pixel edges, colors matched back to the reference
+- **CorridorKey Image** *(image)* — pull a clean alpha matte out of a still frame with CorridorKey 2.0: native-resolution keying, no green screen, no rotoscoping
+- **CorridorKey Video** *(video)* — key a whole clip: drop a video layer and CorridorKey 2.0 returns the animated matte or a transparent cutout at native resolution
+- **Idol 3D** *(3d)* — one image in, a 3D model out: Idol predicts the whole object, including the sides the photo never showed, and the cartridge meshes it into a GLB
+
 | State | Dot | What you can do |
 |---|---|---|
 | running | 🟢 | **Stop**, **Delete** |
