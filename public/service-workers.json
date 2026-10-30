@@ -5,7 +5,23 @@
     "catalog": "services/3x3-sprite-sheet.json",
     "apiUrl": "http://host.docker.internal:8000",
     "uploadUrl": "http://localhost:9000",
-    "workerUploadUrl": "http://host.docker.internal:9000"
+    "workerUploadUrl": "http://host.docker.internal:9000",
+    "container": {
+      "name": "3x3-sprite-sheet",
+      "image": "camenduru/3x3-sprite-sheet:latest",
+      "port": 8000,
+      "hostPort": 8000,
+      "gpus": true,
+      "command": ["python", "worker_runpod.py", "--rp_serve_api", "--rp_api_port", "8000", "--rp_api_host", "0.0.0.0", "--rp_log_level", "DEBUG", "--rp_debugger"],
+      "env": {
+        "s3_access_key_id": "${s3_access_key_id}",
+        "s3_secret_access_key": "${s3_secret_access_key}",
+        "s3_endpoint_url": "http://host.docker.internal:9000",
+        "s3_region_name": "us-east-1",
+        "s3_bucket_name": "tost",
+        "s3_bucket_folder": "output"
+      }
+    }
   },
   {
     "id": "loop-hero-style",
@@ -13,7 +29,23 @@
     "catalog": "services/loop-hero-style.json",
     "apiUrl": "http://host.docker.internal:8001",
     "uploadUrl": "http://localhost:9000",
-    "workerUploadUrl": "http://host.docker.internal:9000"
+    "workerUploadUrl": "http://host.docker.internal:9000",
+    "container": {
+      "name": "loop-hero-style",
+      "image": "camenduru/loop-hero-style:latest",
+      "port": 8000,
+      "hostPort": 8001,
+      "gpus": true,
+      "command": ["python", "worker_runpod.py", "--rp_serve_api", "--rp_api_port", "8000", "--rp_api_host", "0.0.0.0", "--rp_log_level", "DEBUG", "--rp_debugger"],
+      "env": {
+        "s3_access_key_id": "${s3_access_key_id}",
+        "s3_secret_access_key": "${s3_secret_access_key}",
+        "s3_endpoint_url": "http://host.docker.internal:9000",
+        "s3_region_name": "us-east-1",
+        "s3_bucket_name": "tost",
+        "s3_bucket_folder": "output"
+      }
+    }
   },
   {
     "id": "corridorkey",
@@ -21,7 +53,23 @@
     "catalog": "services/corridorkey.json",
     "apiUrl": "http://host.docker.internal:8002",
     "uploadUrl": "http://localhost:9000",
-    "workerUploadUrl": "http://host.docker.internal:9000"
+    "workerUploadUrl": "http://host.docker.internal:9000",
+    "container": {
+      "name": "corridorkey",
+      "image": "camenduru/corridorkey:latest",
+      "port": 8002,
+      "hostPort": 8002,
+      "gpus": true,
+      "command": ["python", "worker_runpod.py", "--port", "8002", "--host", "0.0.0.0"],
+      "env": {
+        "s3_access_key_id": "${s3_access_key_id}",
+        "s3_secret_access_key": "${s3_secret_access_key}",
+        "s3_endpoint_url": "http://host.docker.internal:9000",
+        "s3_region_name": "us-east-1",
+        "s3_bucket_name": "tost",
+        "s3_bucket_folder": "output"
+      }
+    }
   },
   {
     "id": "idol",
@@ -29,6 +77,22 @@
     "catalog": "services/idol.json",
     "apiUrl": "http://host.docker.internal:8003",
     "uploadUrl": "http://localhost:9000",
-    "workerUploadUrl": "http://host.docker.internal:9000"
+    "workerUploadUrl": "http://host.docker.internal:9000",
+    "container": {
+      "name": "idol",
+      "image": "camenduru/idol:latest",
+      "port": 8003,
+      "hostPort": 8003,
+      "gpus": true,
+      "command": ["python", "/content/worker_runpod.py", "--rp_serve_api", "--rp_api_port", "8003", "--rp_api_host", "0.0.0.0", "--rp_log_level", "INFO"],
+      "env": {
+        "s3_access_key_id": "${s3_access_key_id}",
+        "s3_secret_access_key": "${s3_secret_access_key}",
+        "s3_endpoint_url": "http://host.docker.internal:9000",
+        "s3_region_name": "us-east-1",
+        "s3_bucket_name": "tost",
+        "s3_bucket_folder": "output"
+      }
+    }
   }
 ]

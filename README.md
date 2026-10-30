@@ -43,12 +43,22 @@ docker build -t camenduru/opencartridge docker/
 docker run -d --name opencartridge --restart unless-stopped \
   -p 3000:3000 -p 9000:9000 -p 9001:9001 \
   -v opencartridge-data:/content/data \
+  -v /var/run/docker.sock:/var/run/docker.sock \
   camenduru/opencartridge
 ```
 
 - UI: http://localhost:3000
 - MinIO S3 API: http://localhost:9000 (bucket `tost`, anonymous read/write)
 - MinIO console: http://localhost:9001 (login `tost` / `tosttost`)
+
+The Docker socket is optional but recommended: with it mounted, the **Add Cartridge** popup knows which worker
+containers are installed and running, offers **Download & run** for an image that is not present, and **Start** /
+**Stop** for a container that exists. Worker specs (image, ports, command, env) come from `public/service-workers.json`
+and are never taken from the browser, so the app can only pull/create/start/stop the workers that file lists.
+
+> Mounting the socket grants the container the Docker API, which is effectively root on the host. Omit the mount if
+> you do not want that; the popup then degrades to the plain cartridge list and `/api/workers` reports
+> `docker: false`.
 
 ## 💾 Cartridges
 
@@ -90,6 +100,22 @@ docker run -d --name idol --gpus all -p 8003:8003 \
 ```
 
 Requires an NVIDIA GPU with ~24 GB VRAM (tested on RTX 3090). The ComfyUI-based workers load their models at startup (~35 s) before the API answers. CorridorKey needs far less — 4 GB for footage up to 1440p, 6 GB for 4K — but it loads its ~4.8 GB of weights per job, so the first key takes ~30 s. Idol 3D imports ComfyUI on its first job and keeps the loaded weights warm afterwards; a 50-step image takes ~60 s and returns a ~28 MB GLB at the default mesh resolution.
+
+### Worker state in the Add Cartridge popup
+
+With the Docker socket mounted, every cartridge card shows its worker's state and the action that fixes it:
+
+| Dot | State | Action |
+|---|---|---|
+| green | container running and answering | **Stop** |
+| amber | container stopped, or image present but no container | **Start** / **Run** |
+| red | image not installed | **Download & run** — pulls, creates and starts, with pull progress on the card |
+| grey | Docker not mounted, or the worker is not in the registry | — |
+
+`/api/workers` is the whole surface: `GET` returns `{docker, workers:[{id, state, reachable, image, containerId, task}]}`,
+`POST {id, action}` accepts `install`, `start`, `stop`, `restart` and `pull`. The container spec always comes from
+`public/service-workers.json` — image, ports, command and env are never accepted from the browser — and the Docker
+client in `lib/docker.mjs` exposes no exec, remove or volume operations.
 
 ## 🧩 Adding cartridges
 

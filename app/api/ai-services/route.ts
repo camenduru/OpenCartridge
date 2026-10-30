@@ -46,6 +46,8 @@ async function loadCatalog(entry: WorkerEntry): Promise<any[]> {
     }
     return cartridges.map((cartridge: any) => ({
       ...cartridge,
+      // The registry id, so the UI can join a cartridge to its worker's Docker state.
+      workerId: entry.id,
       worker: entry.name ?? entry.id,
       apiUrl: entry.apiUrl,
       uploadUrl: entry.uploadUrl,

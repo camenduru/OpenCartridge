@@ -580,6 +580,52 @@ export function CanvasEditor() {
   const [serviceSelectorView, setServiceSelectorView] = useState<"services" | "examples">("services")
   const [selectedServiceForExamples, setSelectedServiceForExamples] = useState<AIService | null>(null)
 
+  // Live Docker state for the Add Cartridge popup: which worker images are
+  // installed, which containers are running, and how far a download has got.
+  const [workerStates, setWorkerStates] = useState<Record<string, any>>({})
+  const [dockerAvailable, setDockerAvailable] = useState<boolean | null>(null)
+  const [workerNotice, setWorkerNotice] = useState<string | null>(null)
+
+  const refreshWorkerStates = useCallback(async () => {
+    try {
+      const response = await fetch("/api/workers", { cache: "no-store" })
+      if (!response.ok) return
+      const data = await response.json()
+      setDockerAvailable(Boolean(data.docker))
+      const next: Record<string, any> = {}
+      for (const worker of data.workers ?? []) next[worker.id] = worker
+      setWorkerStates(next)
+    } catch {
+      // no live state: the popup still lists the static catalogs
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!showServiceSelector) return
+    void refreshWorkerStates()
+    const timer = setInterval(() => { void refreshWorkerStates() }, 4000)
+    return () => clearInterval(timer)
+  }, [showServiceSelector, refreshWorkerStates])
+
+  const controlWorker = async (workerId: string, action: "install" | "start" | "stop") => {
+    try {
+      const response = await fetch("/api/workers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: workerId, action }),
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        setWorkerNotice(String(data?.error ?? `request failed (${response.status})`))
+        return
+      }
+      setWorkerNotice(null)
+      void refreshWorkerStates()
+    } catch (error) {
+      setWorkerNotice(`Failed to reach OpenCartridge: ${String(error)}`)
+    }
+  }
+
   // Allowed services based on use local api toggle
   const allowedServices = availableServices.map(s => s.id)
 
@@ -6999,6 +7045,19 @@ export function CanvasEditor() {
                     })}
                   </div>
 
+                  {dockerAvailable === false && (
+                    <div className="mb-3 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+                      Docker controls are unavailable — start OpenCartridge with{" "}
+                      <code className="font-mono">-v /var/run/docker.sock:/var/run/docker.sock</code>{" "}
+                      to install, start and stop worker containers from here.
+                    </div>
+                  )}
+                  {(workerNotice || Object.values(workerStates).some((worker: any) => worker.task?.status === "error")) && (
+                    <div className="mb-3 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+                      {workerNotice ?? Object.values(workerStates).map((worker: any) => worker.task?.status === "error" ? `${worker.name}: ${worker.task.detail}` : null).filter(Boolean).join(" · ")}
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {filteredAvailableServices.map((service) => (
                       <div
@@ -7029,8 +7088,57 @@ export function CanvasEditor() {
                                 <Badge variant="outline" className="text-xs">
                                   {service.category.toUpperCase()}
                                 </Badge>
-                                <div className="w-2 h-2 rounded-full bg-[#ff005b]" />
+                                {(() => {
+                                  const worker = workerStates[service.workerId]
+                                  if (!worker) return <div className="w-2 h-2 rounded-full bg-muted-foreground/40" />
+                                  const colour = worker.state === "running"
+                                    ? (worker.reachable ? "bg-emerald-400" : "bg-amber-400")
+                                    : worker.state === "stopped" || worker.state === "ready" ? "bg-amber-400"
+                                    : worker.state === "missing" ? "bg-[#ff005b]"
+                                    : "bg-muted-foreground/40"
+                                  const label = worker.state === "running"
+                                    ? (worker.reachable ? "Running" : "Starting…")
+                                    : worker.state === "stopped" ? "Stopped"
+                                    : worker.state === "ready" ? "Downloaded, not running"
+                                    : worker.state === "missing" ? "Not installed"
+                                    : "Unknown"
+                                  return <div className={`w-2 h-2 rounded-full ${colour}`} title={`${worker.container ?? worker.id}: ${label}`} />
+                                })()}
                               </div>
+                              {(() => {
+                                const worker = workerStates[service.workerId]
+                                if (!worker || !worker.installable) return null
+                                if (worker.task?.status === "running") {
+                                  const percent = worker.task.percent != null ? `${worker.task.percent}%` : "…"
+                                  return (
+                                    <p className="mt-2 text-[10px] text-muted-foreground truncate">
+                                      {worker.task.action === "install" ? "Downloading" : "Pulling"} {percent} · {worker.task.detail}
+                                    </p>
+                                  )
+                                }
+                                const action: "install" | "start" | "stop" | null =
+                                  worker.state === "running" ? "stop"
+                                    : worker.state === "stopped" ? "start"
+                                      : worker.state === "missing" || worker.state === "ready" ? "install"
+                                        : null
+                                if (!action) return null
+                                const actionLabel = action === "stop" ? "Stop"
+                                  : action === "start" ? "Start"
+                                    : worker.state === "ready" ? "Run" : "Download & run"
+                                return (
+                                  <Button
+                                    size="sm"
+                                    variant={action === "stop" ? "outline" : "default"}
+                                    className="mt-2 h-7 px-2 text-[11px]"
+                                    onClick={(event) => {
+                                      event.stopPropagation()
+                                      void controlWorker(worker.id, action)
+                                    }}
+                                  >
+                                    {actionLabel}
+                                  </Button>
+                                )
+                              })()}
                               {service.category === "image" && service.examples?.output && service.examples.output.length > 0 && (
                                 <div className="mt-2">
                                   <img
