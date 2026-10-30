@@ -22,5 +22,13 @@
     "apiUrl": "http://host.docker.internal:8002",
     "uploadUrl": "http://localhost:9000",
     "workerUploadUrl": "http://host.docker.internal:9000"
+  },
+  {
+    "id": "idol",
+    "name": "Idol",
+    "catalog": "services/idol.json",
+    "apiUrl": "http://host.docker.internal:8003",
+    "uploadUrl": "http://localhost:9000",
+    "workerUploadUrl": "http://host.docker.internal:9000"
   }
 ]

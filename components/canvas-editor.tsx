@@ -7126,7 +7126,7 @@ export function CanvasEditor() {
                                         <Download className="h-4 w-4" />
                                       </Button>
                                     </div>
-                                    {ext === 'png' || ext === 'jpg' || ext === 'jpeg' ? (
+                                    {['png', 'jpg', 'jpeg', 'webp', 'gif', 'avif', 'bmp'].includes(ext || '') ? (
                                       <img
                                         src={path}
                                         alt={`Input ${index + 1}`}
@@ -7137,7 +7137,7 @@ export function CanvasEditor() {
                                       />
                                     ) : ext === 'mp3' || ext === 'wav' ? (
                                       <audio controls src={path} className="w-full" />
-                                    ) : ext === 'mp4' ? (
+                                    ) : ['mp4', 'webm', 'mov', 'avi'].includes(ext || '') ? (
                                       <video controls src={path} className="max-w-full h-auto rounded" />
                                     ) : ext === 'glb' || ext === 'gltf' ? (
                                       <ModelViewer
@@ -7206,7 +7206,7 @@ export function CanvasEditor() {
                                         <Download className="h-4 w-4" />
                                       </Button>
                                     </div>
-                                    {ext === 'png' || ext === 'jpg' || ext === 'jpeg' ? (
+                                    {['png', 'jpg', 'jpeg', 'webp', 'gif', 'avif', 'bmp'].includes(ext || '') ? (
                                       <img
                                         src={path}
                                         alt={`Output ${index + 1}`}
@@ -7217,7 +7217,7 @@ export function CanvasEditor() {
                                       />
                                     ) : ext === 'mp3' || ext === 'wav' ? (
                                       <audio controls src={path} className="w-full" />
-                                    ) : ext === 'mp4' ? (
+                                    ) : ['mp4', 'webm', 'mov', 'avi'].includes(ext || '') ? (
                                       <video controls src={path} className="max-w-full h-auto rounded" />
                                     ) : ext === 'glb' || ext === 'gltf' ? (
                                       <ModelViewer

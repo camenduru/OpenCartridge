@@ -1,0 +1,163 @@
+[
+  {
+    "home": true,
+    "id": "idol",
+    "name": "Idol 3D",
+    "description": "One image in, a 3D model out: Idol predicts the whole object — including the sides the photo never showed — as a gaussian splat, and the cartridge meshes it and returns a GLB.",
+    "category": "3d",
+    "icon": "Box",
+    "inputTypes": [
+      "image"
+    ],
+    "workerId": "",
+    "cost": "0",
+    "processingTime": "90",
+    "delay": "12000",
+    "overview": "Idol (Speridlabs) is the TripoSplat architecture retrained on single-object photographs, so ComfyUI runs it natively: DINOv3 ViT-H features and the FLUX.2 VAE condition the denoiser, 50 Euler steps denoise the object's shape code plus the camera token, and the octree/gaussian decoder expands that into a gaussian splat. This cartridge cuts the object out with BiRefNet, crops it Idol's way, drops the near-transparent gaussians that only add haze, meshes the splat and returns the GLB — which the canvas orbits in its 3D viewer.",
+    "divisible": 32,
+    "examples": {
+      "input": [
+        "https://examples.tost.ai/f43f435tgrfsd.jpg"
+      ],
+      "output": [
+        "https://huggingface.co/camenduru/glb/resolve/main/f43f435tgrfsd.glb"
+      ]
+    },
+    "parameters": [
+      {
+        "name": "job_id",
+        "type": "string",
+        "label": "Job ID",
+        "required": false,
+        "defaultValue": "",
+        "ui": false
+      },
+      {
+        "name": "input_image",
+        "type": "file",
+        "label": "Reference Image",
+        "required": true,
+        "ui": false
+      },
+      {
+        "name": "mode",
+        "type": "select",
+        "label": "Crop Mode",
+        "defaultValue": "synthetic",
+        "options": [
+          "synthetic",
+          "real",
+          "custom"
+        ],
+        "ui": true
+      },
+      {
+        "name": "steps",
+        "type": "slider",
+        "label": "Steps",
+        "defaultValue": 50,
+        "min": 20,
+        "max": 60,
+        "step": 1,
+        "ui": true
+      },
+      {
+        "name": "mesh_resolution",
+        "type": "slider",
+        "label": "Mesh Resolution",
+        "defaultValue": 384,
+        "min": 128,
+        "max": 768,
+        "step": 16,
+        "ui": true
+      },
+      {
+        "name": "mesh_smooth",
+        "type": "slider",
+        "label": "Mesh Smoothing",
+        "defaultValue": 0,
+        "min": 0,
+        "max": 60,
+        "step": 1,
+        "ui": true
+      },
+      {
+        "name": "crop_margin",
+        "type": "number",
+        "label": "Crop Margin (custom mode)",
+        "defaultValue": 1.2,
+        "ui": false
+      },
+      {
+        "name": "seed",
+        "type": "number",
+        "label": "Seed",
+        "defaultValue": 42,
+        "ui": false
+      },
+      {
+        "name": "cfg",
+        "type": "number",
+        "label": "CFG",
+        "defaultValue": 4,
+        "ui": false
+      },
+      {
+        "name": "num_gaussians",
+        "type": "number",
+        "label": "Gaussians",
+        "defaultValue": 262144,
+        "ui": false
+      },
+      {
+        "name": "min_opacity",
+        "type": "number",
+        "label": "Prune Opacity",
+        "defaultValue": 0.05,
+        "ui": false
+      },
+      {
+        "name": "max_scale",
+        "type": "number",
+        "label": "Prune Scale",
+        "defaultValue": 0,
+        "ui": false
+      },
+      {
+        "name": "mesh_kernel",
+        "type": "number",
+        "label": "Mesh Kernel",
+        "defaultValue": 5,
+        "ui": false
+      },
+      {
+        "name": "mesh_level",
+        "type": "number",
+        "label": "Mesh Level",
+        "defaultValue": 0.4,
+        "ui": false
+      },
+      {
+        "name": "mesh_min_component",
+        "type": "number",
+        "label": "Mesh Min Component",
+        "defaultValue": 500,
+        "ui": false
+      },
+      {
+        "name": "mesh_min_opacity",
+        "type": "number",
+        "label": "Mesh Opacity",
+        "defaultValue": 0.02,
+        "ui": false
+      },
+      {
+        "name": "mesh_color_sharpen",
+        "type": "number",
+        "label": "Mesh Color Sharpen",
+        "defaultValue": 2,
+        "ui": false
+      }
+    ]
+  }
+]
