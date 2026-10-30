@@ -48,9 +48,9 @@ docker run -d --name opencartridge --restart unless-stopped \
 - MinIO S3 API: http://localhost:9000 (bucket `tost`, anonymous read/write)
 - MinIO console: http://localhost:9001 (login `tost` / `tosttost`)
 
-## 🎮 Workers
+## 💾 Cartridges
 
-The backend of most cartridges is [ComfyUI](https://github.com/comfy-org/comfyui) — the worker dockers run ComfyUI graphs headlessly behind a small job API (`/run`, `/runsync`, `/status/{id}`). CorridorKey 2.0 is the exception: it serves that same API from its own PyTorch runtime (`worker_runpod.py` in [CorridorKey2.0](../CorridorKey2.0)). Start each worker pointed at the MinIO inside the OpenCartridge container (`s3_endpoint_url=http://host.docker.internal:9000`):
+The backend of most cartridges is [ComfyUI](https://github.com/comfy-org/comfyui) — the worker dockers run ComfyUI graphs headlessly behind a small job API (`/run`, `/runsync`, `/status/{id}`). CorridorKey 2.0 is the exception: it serves that same API from its own PyTorch runtime (`worker_runpod.py` in [CorridorKey2.0](https://github.com/nikopueringer/CorridorKey2.0)). Start each worker pointed at the MinIO inside the OpenCartridge container (`s3_endpoint_url=http://host.docker.internal:9000`):
 
 ```bash
 # 3x3 Sprite Sheet — sheet generation (Qwen Image 2.1 Edit) + walk-cycle animation (MiniMax H3)
