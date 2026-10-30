@@ -1,0 +1,340 @@
+[
+  {
+    "home": true,
+    "id": "3x3-sprite-sheet",
+    "name": "3x3 Sprite Sheet",
+    "description": "Build a 3x3 turnaround sprite sheet (eight isometric facings, empty center box, transparent background) from one character reference.",
+    "category": "image",
+    "icon": "Image",
+    "inputTypes": [
+      "image"
+    ],
+    "workerId": "",
+    "cost": "0.68",
+    "processingTime": "120",
+    "delay": "12000",
+    "overview": "Qwen Image 2.1 Edit renders the 3x3 sheet as a single square PNG. The center box stays empty and every other box holds the same character at a different facing. Feed the PNG into 3x3 Sprite Sheet Animation to animate it.",
+    "divisible": 32,
+    "examples": {
+      "input": [
+        "https://examples.tost.ai/1793138010949.jpg"
+      ],
+      "output": [
+        "https://examples.tost.ai/1793150564865.jpg"
+      ]
+    },
+    "parameters": [
+      {
+        "name": "job_id",
+        "type": "string",
+        "label": "Job ID",
+        "required": false,
+        "defaultValue": ""
+      },
+      {
+        "name": "input_image",
+        "type": "file",
+        "label": "Character Reference",
+        "required": true,
+        "ui": false
+      },
+      {
+        "name": "prompt_sheet",
+        "type": "string",
+        "label": "Sheet Prompt",
+        "required": true,
+        "defaultValue": "Static sheet and walk video, both rewritten as one square image: a 3├ù3 grid of equal boxes, center box empty, each figure isolated in its own cell.\nTurnaround\nOne polished square game-asset sheet. A clearly organized 3├ù3 grid of nine equal boxes, thin even gutters, center box empty. Transparent background. No floor, no tiles, no shadows, no labels, no text.\nEach outer box holds one identical copy of the subject, same scale, same line weight, centered in the cell, feet above the bottom edge, no overlap into the gutter. Camera is a fixed top-down isometric angle, about 35 degrees above the horizon, the same camera in every box. Bodies upright. Flat even lighting.\n\nTop-left box: back-left three-quarter, 135 degrees. Mostly back and left shoulder, crown visible, a sliver of cheek, face almost hidden.\nTop-center box: pure back, 180 degrees. Full rear of the head and torso, no face, shoulders square away.\nTop-right box: back-right three-quarter, 225 degrees. Mirror of the top-left.\nMiddle-left box: isometric left side, 90 degrees. Only the left side shown, one eye, nose and mouth in silhouette. Raised-camera side view, not a flat profile.\nCenter box: empty. Transparent, no figure, no mark.\nMiddle-right box: isometric right side, 270 degrees. Mirror of the middle-left.\nBottom-left box: front-left three-quarter, 45 degrees. Left side more open, face still readable, gaze along the facing.\nBottom-center box: pure front, 0 degrees. Face fully toward the camera, both shoulders equal, chest square, crown slightly visible.\nBottom-right box: front-right three-quarter, 315 degrees. Mirror of the bottom-left.\n\nAll eight share one design, one palette, one outline weight. Feet point along each facing. No ground plane, no contact shadows, no arrows, no captions.",
+        "ui": true
+      },
+      {
+        "name": "negative_sheet",
+        "type": "string",
+        "label": "Negative Prompt",
+        "required": false,
+        "defaultValue": "",
+        "ui": false
+      },
+      {
+        "name": "seed",
+        "type": "number",
+        "label": "Seed",
+        "defaultValue": 0,
+        "ui": true
+      },
+      {
+        "name": "sheet_steps",
+        "type": "slider",
+        "label": "Sheet Steps",
+        "defaultValue": 25,
+        "min": 1,
+        "max": 50,
+        "step": 1,
+        "ui": true
+      },
+      {
+        "name": "sheet_cfg",
+        "type": "slider",
+        "label": "Sheet CFG",
+        "defaultValue": 1,
+        "min": 0,
+        "max": 10,
+        "step": 0.1,
+        "ui": true
+      },
+      {
+        "name": "sheet_key_width",
+        "type": "number",
+        "label": "Sheet Width",
+        "defaultValue": 2048,
+        "ui": false
+      },
+      {
+        "name": "sheet_key_height",
+        "type": "number",
+        "label": "Sheet Height",
+        "defaultValue": 2048,
+        "ui": false
+      },
+      {
+        "name": "sheet_sampler",
+        "type": "select",
+        "label": "Sheet Sampler",
+        "defaultValue": "euler",
+        "options": [
+          "euler"
+        ],
+        "ui": false
+      },
+      {
+        "name": "sheet_scheduler",
+        "type": "select",
+        "label": "Sheet Scheduler",
+        "defaultValue": "simple",
+        "options": [
+          "simple"
+        ],
+        "ui": false
+      },
+      {
+        "name": "sheet_resolution",
+        "type": "number",
+        "label": "Reference Resolution",
+        "defaultValue": 0,
+        "ui": false
+      },
+      {
+        "name": "use_empty_latent",
+        "type": "boolean",
+        "label": "Use Empty Latent",
+        "defaultValue": true,
+        "ui": false
+      },
+      {
+        "name": "cache_device",
+        "type": "select",
+        "label": "Cache Device",
+        "defaultValue": "auto",
+        "options": [
+          "auto"
+        ],
+        "ui": false
+      },
+      {
+        "name": "cache_dtype",
+        "type": "select",
+        "label": "Cache Dtype",
+        "defaultValue": "default",
+        "options": [
+          "default"
+        ],
+        "ui": false
+      },
+      {
+        "name": "generate_sheet",
+        "type": "boolean",
+        "label": "Generate Sheet",
+        "defaultValue": true,
+        "ui": false
+      },
+      {
+        "name": "enable_video",
+        "type": "boolean",
+        "label": "Enable Animation",
+        "defaultValue": false,
+        "ui": false
+      }
+    ]
+  },
+  {
+    "home": true,
+    "id": "3x3-sprite-sheet-animation",
+    "name": "3x3 Sprite Sheet Animation",
+    "description": "Animate an existing 3x3 sprite sheet: all eight figures walk in place, in their own cell, as one loopable clip with audio.",
+    "category": "video",
+    "icon": "Video",
+    "inputTypes": [
+      "image"
+    ],
+    "workerId": "",
+    "cost": "1.06",
+    "processingTime": "180",
+    "delay": "20000",
+    "overview": "Stage 2 only: MiniMax H3 image-to-video takes your 3x3 sheet as the first frame and animates every filled box. Camera locked, grid fixed, center box empty, loop matched at start and end. No sheet generation, so the layout you supply is preserved exactly.",
+    "divisible": 32,
+    "examples": {
+      "input": [
+        "https://examples.tost.ai/1793150564865.jpg"
+      ],
+      "output": [
+        "https://examples.tost.ai/1793150564865.mp4"
+      ]
+    },
+    "parameters": [
+      {
+        "name": "job_id",
+        "type": "string",
+        "label": "Job ID",
+        "required": false,
+        "defaultValue": ""
+      },
+      {
+        "name": "input_image",
+        "type": "file",
+        "label": "3x3 Sprite Sheet",
+        "required": true,
+        "ui": false
+      },
+      {
+        "name": "prompt_video",
+        "type": "string",
+        "label": "Walk Prompt",
+        "required": true,
+        "defaultValue": "Image-to-video of that same 3├ù3 sheet. Keep the same character in every filled box: same design, same scale, same palette, same outlines. Do not redesign them. Do not move them into another box. Center box stays empty.\n\nCamera locked, top-down isometric, about 35 degrees, no zoom, no pan, no cut. Transparent background. No floor, no tiles, no ground shadows. Grid boxes and gutters stay fixed.\n\nAnimate all eight at once. Each walks in place inside their own box, along their own facing, then loops. One steady cycle: contact, passing, contact. Two clear steps, feet plant and push, no sliding, no dash. Arms swing opposite the legs. Hair, cloth, cape. They stay inside their box the whole time. Loop matches at start and end.\n\nTop-left: walks toward the upper left, loose parts trail down-right.\nTop-center: walks away from the camera, full back view, no face.\nTop-right: walks toward the upper right, loose parts trail down-left.\nMiddle-left: walks screen-left, loose parts trail to the right.\nCenter: empty for the whole clip.\nMiddle-right: walks screen-right, loose parts trail to the left.\nBottom-left: walks toward the lower left, face readable, loose parts trail up-right.\nBottom-center: walks toward the camera, face readable.\nBottom-right: walks toward the lower right, face readable, loose parts trail up-left.\n\nEven flat light, no motion blur, no extra limbs. Each direction keeps its own forward for the whole loop.",
+        "ui": true
+      },
+      {
+        "name": "seed",
+        "type": "number",
+        "label": "Seed",
+        "defaultValue": 0,
+        "ui": true
+      },
+      {
+        "name": "duration",
+        "type": "slider",
+        "label": "Duration",
+        "defaultValue": 5.0,
+        "min": 5,
+        "max": 15,
+        "step": 5,
+        "ui": true
+      },
+      {
+        "name": "fps",
+        "type": "slider",
+        "label": "FPS",
+        "defaultValue": 24,
+        "min": 16,
+        "max": 24,
+        "step": 8,
+        "ui": true
+      },
+      {
+        "name": "turbo_mode",
+        "type": "boolean",
+        "label": "Turbo",
+        "defaultValue": true,
+        "ui": true
+      },
+      {
+        "name": "video_key_width",
+        "type": "number",
+        "label": "Video Width",
+        "defaultValue": 1024,
+        "ui": false
+      },
+      {
+        "name": "video_key_height",
+        "type": "number",
+        "label": "Video Height",
+        "defaultValue": 1024,
+        "ui": false
+      },
+      {
+        "name": "video_sampler",
+        "type": "select",
+        "label": "Video Sampler",
+        "defaultValue": "res_multistep",
+        "options": [
+          "res_multistep"
+        ],
+        "ui": false
+      },
+      {
+        "name": "turbo_lora",
+        "type": "string",
+        "label": "Turbo LoRA",
+        "defaultValue": "minimax_h3_taomate_3step_lora_avg_rank_19_bf16.safetensors",
+        "ui": false
+      },
+      {
+        "name": "turbo_strength",
+        "type": "slider",
+        "label": "Turbo Strength",
+        "defaultValue": 1,
+        "min": 0,
+        "max": 1,
+        "step": 0.1,
+        "ui": false
+      },
+      {
+        "name": "turbo_steps",
+        "type": "slider",
+        "label": "Turbo Steps",
+        "defaultValue": 3,
+        "min": 1,
+        "max": 20,
+        "step": 1,
+        "ui": false
+      },
+      {
+        "name": "full_steps",
+        "type": "slider",
+        "label": "Full Steps",
+        "defaultValue": 20,
+        "min": 1,
+        "max": 50,
+        "step": 1,
+        "ui": false
+      },
+      {
+        "name": "bit_depth",
+        "type": "number",
+        "label": "Bit Depth",
+        "defaultValue": 8,
+        "ui": false
+      },
+      {
+        "name": "reserve_vram",
+        "type": "number",
+        "label": "Reserve VRAM (GB)",
+        "defaultValue": 6,
+        "ui": false
+      },
+      {
+        "name": "generate_sheet",
+        "type": "boolean",
+        "label": "Generate Sheet",
+        "defaultValue": false,
+        "ui": false
+      },
+      {
+        "name": "enable_video",
+        "type": "boolean",
+        "label": "Enable Animation",
+        "defaultValue": true,
+        "ui": false
+      }
+    ]
+  }
+]

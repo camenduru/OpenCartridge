@@ -15,6 +15,21 @@
     "delay": "12000",
     "overview": "CorridorKey 2.0 (Zachary Harris, with Corridor Digital) predicts a soft, edge-accurate alpha at the input's native resolution: C-RADIOv4-SO400M features, MoGe-2 depth/geometry and RVM recurrence feed a windowed stage-1 pass, and stage 2 refines each frame against the whole window. Select one image layer and the worker keys it, returning either the alpha matte as a grayscale PNG or a straight RGBA cutout.",
     "divisible": 32,
+    "inputs": [
+      {
+        "name": "input_image",
+        "accepts": [
+          "image/*"
+        ],
+        "bind": "primary",
+        "required": true
+      }
+    ],
+    "returns": {
+      "type": "image/png",
+      "ext": "png",
+      "layer": "image"
+    },
     "parameters": [
       {
         "name": "job_id",
@@ -135,6 +150,21 @@
     "delay": "12000",
     "overview": "The video cartridge uploads the video layer itself instead of a still, so the windowed stage-1/stage-2 pass runs over every frame and the motion stays temporally consistent. Alpha comes back as an 8-bit H.264 matte you can drop straight onto the canvas, and cutout as a transparent VP9 WebM.",
     "divisible": 32,
+    "inputs": [
+      {
+        "name": "input_video",
+        "accepts": [
+          "video/*"
+        ],
+        "bind": "primary",
+        "required": true
+      }
+    ],
+    "returns": {
+      "type": "video/mp4",
+      "ext": "mp4",
+      "layer": "video"
+    },
     "parameters": [
       {
         "name": "job_id",

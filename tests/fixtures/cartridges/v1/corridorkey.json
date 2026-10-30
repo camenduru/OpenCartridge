@@ -1,0 +1,242 @@
+[
+  {
+    "home": true,
+    "id": "corridorkey-matte",
+    "name": "CorridorKey Image",
+    "description": "Pull a clean alpha matte out of a still frame with CorridorKey 2.0 ΓÇö native-resolution keying, no green screen, no rotoscoping.",
+    "category": "image",
+    "icon": "Image",
+    "inputTypes": [
+      "image"
+    ],
+    "workerId": "",
+    "cost": "0",
+    "processingTime": "40",
+    "delay": "12000",
+    "overview": "CorridorKey 2.0 (Zachary Harris, with Corridor Digital) predicts a soft, edge-accurate alpha at the input's native resolution: C-RADIOv4-SO400M features, MoGe-2 depth/geometry and RVM recurrence feed a windowed stage-1 pass, and stage 2 refines each frame against the whole window. Select one image layer and the worker keys it, returning either the alpha matte as a grayscale PNG or a straight RGBA cutout.",
+    "divisible": 32,
+    "parameters": [
+      {
+        "name": "job_id",
+        "type": "string",
+        "label": "Job ID",
+        "required": false,
+        "defaultValue": "",
+        "ui": false
+      },
+      {
+        "name": "input_image",
+        "type": "file",
+        "label": "Source Frame",
+        "required": true,
+        "ui": false
+      },
+      {
+        "name": "output",
+        "type": "select",
+        "label": "Output",
+        "defaultValue": "cutout",
+        "options": [
+          "alpha",
+          "cutout"
+        ],
+        "ui": true
+      },
+      {
+        "name": "despill_strength",
+        "type": "slider",
+        "label": "Despill",
+        "defaultValue": 0.5,
+        "min": 0,
+        "max": 1,
+        "step": 0.05,
+        "ui": true
+      },
+      {
+        "name": "model_scale",
+        "type": "slider",
+        "label": "Model Scale",
+        "defaultValue": 1,
+        "min": 0.25,
+        "max": 1,
+        "step": 0.05,
+        "ui": true
+      },
+      {
+        "name": "low_vram",
+        "type": "boolean",
+        "label": "Low VRAM",
+        "defaultValue": false,
+        "ui": false
+      },
+      {
+        "name": "hann_chunk",
+        "type": "number",
+        "label": "Window Size (0 = auto)",
+        "defaultValue": 0,
+        "ui": false
+      },
+      {
+        "name": "hann_stride",
+        "type": "number",
+        "label": "Window Stride (0 = half)",
+        "defaultValue": 0,
+        "ui": false
+      },
+      {
+        "name": "stage2_batch",
+        "type": "number",
+        "label": "Stage 2 Batch",
+        "defaultValue": 1,
+        "ui": false
+      },
+      {
+        "name": "seed",
+        "type": "number",
+        "label": "Seed",
+        "defaultValue": 0,
+        "ui": false
+      },
+      {
+        "name": "start_mode",
+        "type": "select",
+        "label": "Start Mode",
+        "defaultValue": "begin",
+        "options": [
+          "begin",
+          "middle",
+          "random_middle"
+        ],
+        "ui": false
+      }
+    ],
+    "examples": {
+      "input": [
+        "https://examples.tost.ai/1793150564865.jpg"
+      ],
+      "output": [
+        "https://examples.tost.ai/1793150564865a.png"
+      ]
+    }
+  },
+  {
+    "home": true,
+    "id": "corridorkey-clip",
+    "name": "CorridorKey Video",
+    "description": "Key a whole clip: drop a video layer and CorridorKey 2.0 returns the animated matte or a transparent cutout at native resolution.",
+    "category": "video",
+    "icon": "Video",
+    "inputTypes": [
+      "video"
+    ],
+    "workerId": "",
+    "cost": "0",
+    "processingTime": "180",
+    "delay": "12000",
+    "overview": "The video cartridge uploads the video layer itself instead of a still, so the windowed stage-1/stage-2 pass runs over every frame and the motion stays temporally consistent. Alpha comes back as an 8-bit H.264 matte you can drop straight onto the canvas, and cutout as a transparent VP9 WebM.",
+    "divisible": 32,
+    "parameters": [
+      {
+        "name": "job_id",
+        "type": "string",
+        "label": "Job ID",
+        "required": false,
+        "defaultValue": "",
+        "ui": false
+      },
+      {
+        "name": "input_video",
+        "type": "file",
+        "label": "Source Clip",
+        "required": true,
+        "ui": false
+      },
+      {
+        "name": "output",
+        "type": "select",
+        "label": "Output",
+        "defaultValue": "alpha",
+        "options": [
+          "alpha",
+          "cutout"
+        ],
+        "ui": true
+      },
+      {
+        "name": "despill_strength",
+        "type": "slider",
+        "label": "Despill",
+        "defaultValue": 0.5,
+        "min": 0,
+        "max": 1,
+        "step": 0.05,
+        "ui": true
+      },
+      {
+        "name": "model_scale",
+        "type": "slider",
+        "label": "Model Scale",
+        "defaultValue": 1,
+        "min": 0.25,
+        "max": 1,
+        "step": 0.05,
+        "ui": true
+      },
+      {
+        "name": "low_vram",
+        "type": "boolean",
+        "label": "Low VRAM",
+        "defaultValue": false,
+        "ui": false
+      },
+      {
+        "name": "hann_chunk",
+        "type": "number",
+        "label": "Window Size (0 = auto)",
+        "defaultValue": 0,
+        "ui": false
+      },
+      {
+        "name": "hann_stride",
+        "type": "number",
+        "label": "Window Stride (0 = half)",
+        "defaultValue": 0,
+        "ui": false
+      },
+      {
+        "name": "stage2_batch",
+        "type": "number",
+        "label": "Stage 2 Batch",
+        "defaultValue": 1,
+        "ui": false
+      },
+      {
+        "name": "seed",
+        "type": "number",
+        "label": "Seed",
+        "defaultValue": 0,
+        "ui": false
+      },
+      {
+        "name": "start_mode",
+        "type": "select",
+        "label": "Start Mode",
+        "defaultValue": "begin",
+        "options": [
+          "begin",
+          "middle",
+          "random_middle"
+        ],
+        "ui": false
+      }
+    ],
+    "examples": {
+      "input": [
+        "https://examples.tost.ai/1793150564865.mp4"
+      ],
+      "output": [
+        "https://examples.tost.ai/1793150564865a.mp4"
+      ]
+    }
+  }
+]

@@ -15,6 +15,21 @@
     "delay": "12000",
     "overview": "Idol (Speridlabs) is the TripoSplat architecture retrained on single-object photographs, so ComfyUI runs it natively: DINOv3 ViT-H features and the FLUX.2 VAE condition the denoiser, 50 Euler steps denoise the object's shape code plus the camera token, and the octree/gaussian decoder expands that into a gaussian splat. This cartridge cuts the object out with BiRefNet, crops it Idol's way, drops the near-transparent gaussians that only add haze, meshes the splat and returns the GLB — which the canvas orbits in its 3D viewer.",
     "divisible": 32,
+    "inputs": [
+      {
+        "name": "input_image",
+        "accepts": [
+          "image/*"
+        ],
+        "bind": "primary",
+        "required": true
+      }
+    ],
+    "returns": {
+      "type": "model/gltf-binary",
+      "ext": "glb",
+      "layer": "3d"
+    },
     "examples": {
       "input": [
         "https://examples.tost.ai/f43f435tgrfsd.jpg"

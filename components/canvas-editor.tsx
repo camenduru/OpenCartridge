@@ -82,9 +82,69 @@ import { cn } from "@/lib/utils"
 import { ThemeToggle } from "./theme-toggle"
 import { GLBViewerWindow } from "./glb-viewer-window"
 import { WaveformOverlay } from "./waveform-overlay"
+import {
+  extensionFor,
+  paramControl,
+  primaryInput,
+  resultKind,
+} from "@/lib/cartridge-schema.mjs"
 import { useTheme } from 'next-themes'
 import dynamic from 'next/dynamic'
 import { AutoModel, AutoProcessor, RawImage } from '@huggingface/transformers'
+
+/**
+ * Fallback control for a parameter whose `type` this build does not know.
+ *
+ * Keeps the raw text while it is being typed and commits the parsed value as
+ * soon as it is valid JSON, so a cartridge can ship a widget from the future and
+ * still be edited and dispatched here. This is what keeps unknown vocabulary
+ * additive instead of silently dropping a parameter.
+ */
+function JsonParamField({
+  id,
+  value,
+  onChange,
+  placeholder,
+}: {
+  id: string
+  value: any
+  onChange: (value: any) => void
+  placeholder?: string
+}) {
+  const asText = (input: any) => (typeof input === 'string' ? input : JSON.stringify(input ?? null, null, 2))
+  const [draft, setDraft] = useState<string>(() => asText(value))
+
+  useEffect(() => {
+    const next = asText(value)
+    setDraft((current) => {
+      try {
+        if (JSON.stringify(JSON.parse(current)) === JSON.stringify(JSON.parse(next))) return current
+      } catch {
+        // the user's text is not valid JSON yet: leave it alone
+      }
+      return next
+    })
+  }, [value])
+
+  return (
+    <Textarea
+      id={id}
+      value={draft}
+      onChange={(event) => {
+        const text = event.target.value
+        setDraft(text)
+        try {
+          onChange(JSON.parse(text))
+        } catch {
+          onChange(text)
+        }
+      }}
+      className="text-xs font-mono"
+      rows={4}
+      placeholder={placeholder || '{}'}
+    />
+  )
+}
 
 // Dynamically import model-viewer to avoid SSR issues
 const ModelViewer = dynamic(() => import('@google/model-viewer').then(() => {
@@ -2955,30 +3015,19 @@ export function CanvasEditor() {
   }
   
   // Downloads keep their real container: a cutout render is VP9 WebM, and
-  // saving it as .mp4 hands back a file no player will open by extension.
-  const downloadExtension = (url: string, mime: string, fallback: string) => {
-    const byMime: Record<string, string> = {
-      "video/webm": "webm",
-      "video/mp4": "mp4",
-      "video/quicktime": "mov",
-      "audio/mpeg": "mp3",
-      "audio/wav": "wav",
-      "audio/x-wav": "wav",
-      "audio/ogg": "ogg",
+  // saving it as .mp4 hands back a file no player will open by extension. The
+  // cartridge's declared `returns.ext` wins; otherwise the MIME type, otherwise
+  // the URL — result layers point at /api/image-proxy?url=…, so the extension
+  // lives in the query string, not at the end of the path.
+  const downloadLayerFile = async (url: string, baseName: string, fallbackExt: string, service?: any) => {
+    const pick = (mime: string) => {
+      const resolved = extensionFor(service, url, mime)
+      return resolved && resolved !== "bin" ? resolved : fallbackExt
     }
-    if (byMime[mime]) return byMime[mime]
-    // Result layers point at /api/image-proxy?url=…, so the extension lives in
-    // the query string, not at the end of the path.
-    const match = decodeURIComponent(url.split("#")[0]).match(/\.([a-z0-9]{2,5})(?:[?&]|$)/i)
-    return match ? match[1].toLowerCase() : fallback
-  }
-
-  const downloadLayerFile = async (url: string, baseName: string, fallbackExt: string) => {
-    const fallback = downloadExtension(url, "", fallbackExt)
-    let ext = fallback
+    let ext = pick("")
     try {
       const blob = await (await fetch(url)).blob()
-      ext = downloadExtension(url, blob.type, fallback)
+      ext = pick(blob.type)
       const objectUrl = URL.createObjectURL(blob)
       const a = document.createElement("a")
       a.href = objectUrl
@@ -2998,16 +3047,17 @@ export function CanvasEditor() {
       const layer = layers.find(l => l.id === layerId)
       if (!layer) return
       const baseName = `${layer.name.replace(/\s+/g, '_')}-OpenCartridge-${Date.now()}`
+      const layerService = aiServices.find((s: any) => s.id === layer.serviceId)
 
       if (layer.type === 'video' && layer.videoUrl) {
         // Download the video file directly, under its own extension.
-        void downloadLayerFile(layer.videoUrl, baseName, "mp4")
+        void downloadLayerFile(layer.videoUrl, baseName, "mp4", layerService)
         return
       }
 
       if (layer.type === 'audio' && layer.audioUrl) {
         // Download the audio file directly, under its own extension.
-        void downloadLayerFile(layer.audioUrl, baseName, "mp3")
+        void downloadLayerFile(layer.audioUrl, baseName, "mp3", layerService)
         return
       }
 
@@ -3466,6 +3516,23 @@ export function CanvasEditor() {
     const endImageParam = service.parameters.find((p: any) => p.name === 'end_image' && p.ui === false)
     const inputAudioParam = service.parameters.find((p: any) => p.name === 'input_audio' && p.ui === false)
     const inputVideoParam = service.parameters.find((p: any) => p.name === 'input_video' && p.ui === false)
+
+    // v2 cartridges declare which parameter takes the selected layer
+    // (`inputs[].bind === 'primary'`). Catalogs written before that have no
+    // `inputs` and keep using the magic names above.
+    const selectedKind = primarySelectedLayer?.type === 'video' ? 'video'
+      : primarySelectedLayer?.type === 'audio' ? 'audio'
+      : primarySelectedLayer?.type === 'image' ? 'image'
+      : primarySelectedLayer?.type === 'text' ? 'text' : null
+    const declaredInput = primaryInput(service, selectedKind)
+
+    // A clip is uploaded as the file itself instead of a canvas still when the
+    // input is meant for video: the magic `input_video`, or a declared input
+    // that accepts video/*.
+    const uploadsVideoFiles = Boolean(inputVideoParam) || Boolean(
+      Array.isArray(declaredInput?.accepts) &&
+      declaredInput.accepts.some((mime: any) => String(mime).startsWith('video'))
+    )
   
     let inputLayers: Layer[] = []
     if (inputVideoParam) {
@@ -3567,7 +3634,9 @@ export function CanvasEditor() {
             const inputImageCheckParam = service.parameters.find((p: any) => p.name === 'input_image_check' && p.ui === false)
             const inputAudioParam = service.parameters.find((p: any) => p.name === 'input_audio' && p.ui === false)
 
-            if (inputVideoParam) {
+            if (declaredInput) {
+              paramName = declaredInput.name
+            } else if (inputVideoParam) {
               paramName = 'input_video'
             } else if (inputImageParam) {
               paramName = 'input_image'
@@ -3606,7 +3675,7 @@ export function CanvasEditor() {
               }
 
               let blob: Blob | null = null
-              if (inputVideoParam && layer.type === 'video' && layer.videoUrl) {
+              if (uploadsVideoFiles && layer.type === 'video' && layer.videoUrl) {
                 // Upload the clip itself — keying a single frame of it is not
                 // what a clip cartridge is for.
                 const videoResponse = await fetch(layer.videoUrl)
@@ -3625,7 +3694,7 @@ export function CanvasEditor() {
               // object URL handed to the worker uses the worker's own view of
               // that MinIO so it can download the input from inside its container.
               const formData = new FormData()
-              const ext = layer.type === 'audio' ? 'mp3' : (inputVideoParam && layer.type === 'video' ? 'mp4' : 'png')
+              const ext = layer.type === 'audio' ? 'mp3' : (uploadsVideoFiles && layer.type === 'video' ? 'mp4' : 'png')
               formData.append('file', blob, `selected-layer-${i + 1}.${ext}`)
               formData.append('localUploadUrl', service.uploadUrl)
               if (service.workerUploadUrl) {
@@ -4028,11 +4097,18 @@ export function CanvasEditor() {
       // Find the job to get the input layer ID
       const foundJob = job || (jobId ? serviceJobs.find(j => j.id === jobId) : null)
 
+      // What this cartridge returns: `returns.layer` when it declares one, else
+      // the URL's extension, else the cartridge's category. Declaring the type
+      // is what lets a new result kind (3d, webm with alpha, …) work without
+      // teaching the UI every extension a worker might emit.
+      const categoryFallback = service?.category === "video" ? "video" : service?.category === "audio" ? "audio" : null
+      const resultLayerKind = resultKind(service, resultUrl, categoryFallback)
+
       // Check if this is a video service
-      const isVideoService = service?.category === "video"
+      const isVideoService = resultLayerKind === "video"
 
       // Check if this is an audio service
-      const isAudioService = service?.category === "audio"
+      const isAudioService = resultLayerKind === "audio"
 
       if (isVideoService) {
         // Handle video result - fetch and create blob URL for seekability
@@ -4172,7 +4248,7 @@ export function CanvasEditor() {
               } : j))
             }
           })
-      } else if (resultUrl.toLowerCase().endsWith('.glb') || resultUrl.toLowerCase().endsWith('.gltf')) {
+      } else if (resultLayerKind === "3d") {
         // Handle GLB result
         const glbUrl = `/api/image-proxy?url=${encodeURIComponent(resultUrl)}`
 
@@ -4360,11 +4436,7 @@ export function CanvasEditor() {
         }
       } else {
         // Check if this is an audio service result
-        const isAudioResult = resultUrl.toLowerCase().endsWith('.mp3') ||
-                              resultUrl.toLowerCase().endsWith('.wav') ||
-                              resultUrl.toLowerCase().endsWith('.flac') ||
-                              resultUrl.toLowerCase().endsWith('.ogg') ||
-                              resultUrl.toLowerCase().endsWith('.m4a')
+        const isAudioResult = resultLayerKind === "audio"
 
         if (isAudioResult) {
           // Handle audio result
@@ -5302,6 +5374,11 @@ export function CanvasEditor() {
                                   : selectedService[param.name] ?? param.defaultValue ?? ''
                                 const label = param.label || param.name.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())
 
+                                // The control comes from the schema vocabulary, not from a
+                                // hardcoded chain: a type this build does not know falls
+                                // back to a JSON editor instead of vanishing.
+                                const control = paramControl(param)
+
                                 return (
                                   <div key={param.name} className="space-y-1">
                                     <Label htmlFor={`service-${selectedServiceId}-${param.name}`} className="text-xs">
@@ -5309,7 +5386,7 @@ export function CanvasEditor() {
                                       {param.required && <span className="text-red-500 ml-1">*</span>}
                                     </Label>
 
-                                    {param.type === 'string' && (param.name.includes('prompt') || param.name.includes('instruction') || param.name.includes('text') || param.name.includes('lyric')) ? (
+                                    {control === 'textarea' ? (
                                       <Textarea
                                         id={`service-${selectedServiceId}-${param.name}`}
                                         value={paramValue}
@@ -5324,7 +5401,7 @@ export function CanvasEditor() {
                                         placeholder={param.description || `Enter ${label.toLowerCase()}`}
                                         rows={3}
                                       />
-                                    ) : param.type === 'string' ? (
+                                    ) : control === 'text' ? (
                                       <Input
                                         id={`service-${selectedServiceId}-${param.name}`}
                                         type="text"
@@ -5339,7 +5416,7 @@ export function CanvasEditor() {
                                         className="text-xs"
                                         placeholder={param.description || `Enter ${label.toLowerCase()}`}
                                       />
-                                    ) : param.type === 'number' ? (
+                                    ) : control === 'number' ? (
                                       <Input
                                         id={`service-${selectedServiceId}-${param.name}`}
                                         type="number"
@@ -5357,7 +5434,7 @@ export function CanvasEditor() {
                                         max={param.max}
                                         step={param.step || 1}
                                       />
-                                    ) : param.type === 'boolean' ? (
+                                    ) : control === 'boolean' ? (
                                       <div className="flex items-center space-x-2">
                                         <Switch
                                           id={`service-${selectedServiceId}-${param.name}`}
@@ -5374,7 +5451,7 @@ export function CanvasEditor() {
                                           {paramValue ? 'Enabled' : 'Disabled'}
                                         </Label>
                                       </div>
-                                    ) : param.type === 'select' ? (
+                                    ) : control === 'select' ? (
                                       <Select
                                         value={paramValue}
                                         onValueChange={(value) => {
@@ -5396,7 +5473,7 @@ export function CanvasEditor() {
                                           ))}
                                         </SelectContent>
                                       </Select>
-                                    ) : param.type === 'slider' ? (
+                                    ) : control === 'slider' ? (
                                       <div className="space-y-2">
                                         <Slider
                                           value={[paramValue]}
@@ -5418,7 +5495,7 @@ export function CanvasEditor() {
                                           <span>{param.max || 100}</span>
                                         </div>
                                       </div>
-                                    ) : param.type === 'file' ? (
+                                    ) : control === 'file' ? (
                                       <div className="space-y-1">
                                         <Input
                                           id={`service-${selectedServiceId}-${param.name}`}
@@ -5527,6 +5604,19 @@ export function CanvasEditor() {
                                           </Button>
                                         )}
                                       </div>
+                                    ) : control === 'json' ? (
+                                      <JsonParamField
+                                        id={`service-${selectedServiceId}-${param.name}`}
+                                        value={paramValue}
+                                        onChange={(value) => {
+                                          setAiServices(prev => prev.map(s =>
+                                            s.id === selectedServiceId
+                                              ? { ...s, [param.name]: value }
+                                              : s
+                                          ))
+                                        }}
+                                        placeholder={param.description || `JSON value for ${label.toLowerCase()}`}
+                                      />
                                     ) : (
                                       <Input
                                         id={`service-${selectedServiceId}-${param.name}`}
