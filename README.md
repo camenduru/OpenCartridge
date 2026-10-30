@@ -98,7 +98,7 @@ Every worker is registered in the global registry **`public/service-workers.json
 - `uploadUrl` — the MinIO server the browser uploads inputs to
 - `workerUploadUrl` — the same MinIO as seen from inside the worker container (used for the object link handed to the worker)
 
-To add a worker: drop its `services.json` somewhere reachable, add one entry to the registry, restart OpenCartridge. Bundled catalogs currently ship for [tostui-3x3-sprite-sheet](../tostui-3x3-sprite-sheet) (sheet generation + animation), [tostui-loop-hero-style](../tostui-loop-hero-style) (Loop Hero pixel-art style) and [CorridorKey2.0](../CorridorKey2.0) (native-resolution matting: **CorridorKey Matte** keys a still automatically, **CorridorKey Hint** follows a matte layer you supply).
+To add a worker: drop its `services.json` somewhere reachable, add one entry to the registry, restart OpenCartridge. Bundled catalogs currently ship for [tostui-3x3-sprite-sheet](../tostui-3x3-sprite-sheet) (sheet generation + animation), [tostui-loop-hero-style](../tostui-loop-hero-style) (Loop Hero pixel-art style) and [CorridorKey2.0](../CorridorKey2.0) (native-resolution matting: **CorridorKey Image** keys a still, **CorridorKey Video** keys a whole clip).
 
 ## 🔄 Updating
 
