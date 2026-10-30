@@ -50,7 +50,7 @@ docker run -d --name opencartridge --restart unless-stopped \
 
 ## 🎮 Workers
 
-The backend of every cartridge is [ComfyUI](https://github.com/comfy-org/comfyui) — the worker dockers run ComfyUI graphs headlessly behind a small job API (`/run`, `/runsync`, `/status/{id}`). Start each worker pointed at the MinIO inside the OpenCartridge container (`s3_endpoint_url=http://host.docker.internal:9000`):
+The backend of most cartridges is [ComfyUI](https://github.com/comfy-org/comfyui) — the worker dockers run ComfyUI graphs headlessly behind a small job API (`/run`, `/runsync`, `/status/{id}`). CorridorKey 2.0 is the exception: it serves that same API from its own PyTorch runtime (`worker_runpod.py` in [CorridorKey2.0](../CorridorKey2.0)). Start each worker pointed at the MinIO inside the OpenCartridge container (`s3_endpoint_url=http://host.docker.internal:9000`):
 
 ```bash
 # 3x3 Sprite Sheet — sheet generation (Qwen Image 2.1 Edit) + walk-cycle animation (MiniMax H3)
@@ -69,9 +69,17 @@ docker run -d --name loop-hero-style --gpus all -p 8001:8000 \
   -e s3_region_name=us-east-1 -e s3_bucket_name=tost -e s3_bucket_folder=output \
   camenduru/loop-hero-style \
   python worker_runpod.py --rp_serve_api --rp_api_port 8000 --rp_api_host 0.0.0.0 --rp_log_level DEBUG --rp_debugger
+
+# CorridorKey 2.0 — native-resolution matting / keying (C-RADIOv4 + MoGe-2 + RVM)
+docker run -d --name corridorkey --gpus all -p 8002:8002 \
+  -e s3_access_key_id=tost -e s3_secret_access_key=tosttost \
+  -e s3_endpoint_url=http://host.docker.internal:9000 \
+  -e s3_region_name=us-east-1 -e s3_bucket_name=tost -e s3_bucket_folder=output \
+  camenduru/corridorkey \
+  python worker_runpod.py --port 8002 --host 0.0.0.0
 ```
 
-Requires an NVIDIA GPU with ~24 GB VRAM (tested on RTX 3090). The workers load their models at startup (~35 s) before the API answers.
+Requires an NVIDIA GPU with ~24 GB VRAM (tested on RTX 3090). The workers load their models at startup (~35 s) before the API answers. CorridorKey needs far less — 4 GB for footage up to 1440p, 6 GB for 4K — but it loads its ~4.8 GB of weights per job, so the first key takes ~30 s.
 
 ## 🧩 Adding cartridges
 
@@ -80,7 +88,8 @@ Every worker is registered in the global registry **`public/service-workers.json
 ```json
 [
   { "id": "3x3-sprite-sheet", "name": "3x3 Sprite Sheet", "catalog": "services/3x3-sprite-sheet.json", "apiUrl": "http://127.0.0.1:8000", "uploadUrl": "http://localhost:9000", "workerUploadUrl": "http://host.docker.internal:9000" },
-  { "id": "loop-hero-style",  "name": "Loop Hero Style",  "catalog": "services/loop-hero-style.json",  "apiUrl": "http://127.0.0.1:8001", "uploadUrl": "http://localhost:9000", "workerUploadUrl": "http://host.docker.internal:9000" }
+  { "id": "loop-hero-style",  "name": "Loop Hero Style",  "catalog": "services/loop-hero-style.json",  "apiUrl": "http://127.0.0.1:8001", "uploadUrl": "http://localhost:9000", "workerUploadUrl": "http://host.docker.internal:9000" },
+  { "id": "corridorkey",      "name": "CorridorKey 2.0",  "catalog": "services/corridorkey.json",      "apiUrl": "http://127.0.0.1:8002", "uploadUrl": "http://localhost:9000", "workerUploadUrl": "http://host.docker.internal:9000" }
 ]
 ```
 
@@ -89,7 +98,7 @@ Every worker is registered in the global registry **`public/service-workers.json
 - `uploadUrl` — the MinIO server the browser uploads inputs to
 - `workerUploadUrl` — the same MinIO as seen from inside the worker container (used for the object link handed to the worker)
 
-To add a worker: drop its `services.json` somewhere reachable, add one entry to the registry, restart OpenCartridge. Bundled catalogs currently ship for [tostui-3x3-sprite-sheet](../tostui-3x3-sprite-sheet) (sheet generation + animation) and [tostui-loop-hero-style](../tostui-loop-hero-style) (Loop Hero pixel-art style).
+To add a worker: drop its `services.json` somewhere reachable, add one entry to the registry, restart OpenCartridge. Bundled catalogs currently ship for [tostui-3x3-sprite-sheet](../tostui-3x3-sprite-sheet) (sheet generation + animation), [tostui-loop-hero-style](../tostui-loop-hero-style) (Loop Hero pixel-art style) and [CorridorKey2.0](../CorridorKey2.0) (native-resolution matting: **CorridorKey Matte** keys a still automatically, **CorridorKey Hint** follows a matte layer you supply).
 
 ## 🔄 Updating
 
@@ -98,7 +107,8 @@ The Global Configuration panel has an **Update Cartridges** button (POST `/api/u
 ## 🙏 Credits
 
 - [TostUI](https://github.com/camenduru/TostUI) by [camenduru](https://x.com/camenduru) — application code, cartridge protocol and worker dockers (MIT)
-- [ComfyUI](https://github.com/comfy-org/comfyui) — the backend running inside every worker
+- [ComfyUI](https://github.com/comfy-org/comfyui) — the backend running inside most workers
+- [CorridorKey 2.0](https://github.com/camenduru/CorridorKey2.0) — native-resolution matting model by Zachary Harris with Corridor Digital, served through its own worker API
 - [higgsfield.ai](https://higgsfield.ai) — design inspiration
 - [shadcn/ui](https://ui.shadcn.com) + Radix UI — component primitives
 

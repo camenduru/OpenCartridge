@@ -14,5 +14,13 @@
     "apiUrl": "http://host.docker.internal:8001",
     "uploadUrl": "http://localhost:9000",
     "workerUploadUrl": "http://host.docker.internal:9000"
+  },
+  {
+    "id": "corridorkey",
+    "name": "CorridorKey 2.0",
+    "catalog": "services/corridorkey.json",
+    "apiUrl": "http://host.docker.internal:8002",
+    "uploadUrl": "http://localhost:9000",
+    "workerUploadUrl": "http://host.docker.internal:9000"
   }
 ]
