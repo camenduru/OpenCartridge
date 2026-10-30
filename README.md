@@ -16,6 +16,7 @@
 
 - 🎨 **Canvas** — layers, transforms, undo/redo, export (PNG, MP4, WebM, GLB)
 - 💾 **Cartridges** — worker models packaged as one-click cartridges, installed and run from the UI
+- 🐳 **Docker cartridges** — download and run with one click; start, stop and delete the container from the same card
 - 🧊 **3D** — GLB preview and orbiting viewer
 - 🎵 **Audio** — waveform overlay and generation cartridges
 - 🗄️ **MinIO inside** — the container ships its own object storage; nothing else to install
@@ -38,10 +39,6 @@ docker run -d --name opencartridge --restart unless-stopped \
 
 Open **http://localhost:3000**. That is the whole setup — no worker containers to start by hand.
 
-- MinIO API `:9000` (public bucket `tost`), console `:9001` (`tost` / `tosttost`)
-- `-v /var/run/docker.sock` lets the UI manage worker containers. It grants Docker API access, i.e. root on the
-  host; remove the mount if you would rather do that yourself, and the cartridge list still works.
-
 ## 💾 Cartridges
 
 Open **💾 Cartridges**, pick a cartridge and press **Download & run** — the app pulls the worker image, creates its
@@ -59,7 +56,7 @@ ports, command, env) comes from `public/service-workers.json` and is never taken
 Requires an NVIDIA GPU (~24 GB VRAM is enough for the current workers). The first run of a worker downloads its image
 — a few GB — and the first job loads its models.
 
-## 🙏 Credits
+## ❤️ Credits
 
 - [TostUI](https://github.com/camenduru/TostUI) by [camenduru](https://x.com/camenduru) — application code, cartridge protocol and worker dockers
 - [ComfyUI](https://github.com/comfy-org/comfyui) — the backend inside most workers
