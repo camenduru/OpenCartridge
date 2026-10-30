@@ -39,6 +39,9 @@ docker run -d --name opencartridge --restart unless-stopped \
 
 Open **http://localhost:3000**. That is the whole setup — no worker containers to start by hand.
 
+`-v opencartridge-data:/content/data` is the MinIO storage: generated renders and uploaded inputs live there, so they
+survive recreating the container. `docker volume rm opencartridge-data` clears them.
+
 ## 💾 Cartridges
 
 Open **💾 Cartridges**, pick a cartridge and press **Download & run** — the app pulls the worker image, creates its
