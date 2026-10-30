@@ -318,6 +318,7 @@ corridorkey, `8003` idol. **Next free port is 8004.**
 
 - `id` is the join key: `/api/ai-services` stamps it on every cartridge as `workerId`.
 - `port` = inside the container, `hostPort` = published. They may differ (loop-hero-style is 8000 → 8001).
+- `ulimits` mirrors `docker run --ulimit name=value` (soft and hard both set), e.g. `{"memlock": 67108864}`.
 - `${NAME}` is expanded from OpenCartridge's own environment; everything else is literal.
 - Without `container` the cartridge still lists, but cannot be installed/started/deleted from the UI.
 - The browser never supplies any of this — `lib/docker.mjs` only acts on the registry spec.

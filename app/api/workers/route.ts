@@ -108,6 +108,7 @@ async function describe(entry: WorkerEntry, containers: any[], docker: boolean, 
   else state = 'unknown'
 
   const task = tasks.get(entry.id) ?? null
+  // Only probe a worker that is supposed to be up; a stopped one has nothing to answer.
   const answering = state === 'running' ? await reachable(entry.apiUrl) : false
 
   return {
@@ -125,7 +126,19 @@ async function describe(entry: WorkerEntry, containers: any[], docker: boolean, 
   }
 }
 
+// Overlapping polls (every 4 s from an open panel) must not queue up behind each
+// other while a job is loading the machine, so a short-lived snapshot is shared.
+const globalForSnapshot = globalThis as unknown as {
+  __ocWorkerSnapshot?: { at: number; body: any } | null
+}
+let snapshot = globalForSnapshot.__ocWorkerSnapshot ?? null
+globalForSnapshot.__ocWorkerSnapshot = snapshot
+
 export async function GET() {
+  if (snapshot && Date.now() - snapshot.at < 2000) {
+    return NextResponse.json(snapshot.body)
+  }
+
   const registry = await loadRegistry()
   const docker = await dockerAvailable()
 
@@ -138,10 +151,13 @@ export async function GET() {
     } catch {
       containers = []
     }
+    // Only ask about images for workers that have no container yet: with a
+    // container the state is already known, which saves four daemon round-trips.
     await Promise.all(
       registry.map(async (entry) => {
         const spec = specFor(entry)
         if (!spec?.image) return
+        if (containers.some((c: any) => c.name === spec.name)) return
         try {
           images.set(spec.image, await imagePresent(spec.image))
         } catch {
@@ -152,7 +168,10 @@ export async function GET() {
   }
 
   const workers = await Promise.all(registry.map((entry) => describe(entry, containers, docker, images)))
-  return NextResponse.json({ docker, workers })
+  const body = { docker, workers }
+  snapshot = { at: Date.now(), body }
+  globalForSnapshot.__ocWorkerSnapshot = snapshot
+  return NextResponse.json(body)
 }
 
 export async function POST(request: Request) {

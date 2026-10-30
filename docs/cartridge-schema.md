@@ -155,6 +155,7 @@ container spec the app is allowed to act on.
   the browser.
 - `port` is the port the worker listens on inside its container; `hostPort` is what gets published. Without the socket
   mounted, `apiUrl` is just probed and the controls are hidden.
+- `ulimits` mirrors `docker run --ulimit name=value` (soft and hard both set), e.g. `{"memlock": 67108864}`.
 
 ## Deprecation ledger
 

@@ -256,6 +256,15 @@ test('cartridges whose worker is down are hidden from the panel', () => {
   assert.deepEqual(shown.map((s) => s.id), ['a', 'd'])
 })
 
+test('an unknown state never hides a cartridge — a busy machine must not empty the panel', () => {
+  const services = [{ id: 'a', workerId: 'w1' }, { id: 'b', workerId: 'w2' }]
+  const unknown = { w1: { state: 'unknown' }, w2: { state: 'unknown' } }
+  assert.deepEqual(visibleCartridges(services, unknown).map((s) => s.id), ['a', 'b'])
+
+  // docker probe failed entirely: no states at all
+  assert.equal(visibleCartridges(services, {}).length, 2)
+})
+
 test('without Docker state nothing is hidden', () => {
   const services = [{ id: 'a', workerId: 'w1' }, { id: 'b', workerId: 'w2' }]
   assert.equal(visibleCartridges(services, {}).length, 2)
