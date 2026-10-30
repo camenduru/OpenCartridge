@@ -6,6 +6,8 @@
 
 <img width="1920" height="1080" alt="Screenshot 2026-10-30 020113" src="https://github.com/user-attachments/assets/679aa7cd-4ad4-419c-b62c-16d587f68bfe" />
 
+<img width="1920" height="1080" alt="Screenshot 2026-10-30 065139" src="https://github.com/user-attachments/assets/978b98fe-f490-4be5-901e-aea732dedfb2" />
+
 **OpenCartridge** is an open-source, **local-first AI game asset creative suite** — a canvas-first workspace for generating and editing **game assets** (images, sprite sheets, animation, 3D, audio) entirely through your own locally running ComfyUI workers. It is built on top of [camenduru's TostUI](https://github.com/camenduru/TostUI) and restyled with the visual language of [higgsfield.ai](https://higgsfield.ai): near-black surfaces, white type, a lime `#d1fe17` accent, and editorial serif headlines.
 
 ![OpenCartridge](public/logo.svg)
