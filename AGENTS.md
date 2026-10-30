@@ -96,6 +96,8 @@ Worth copying verbatim from it:
 - `_log_vram("after conditioning")` — free VRAM printed around each stage; keep it while developing, it is how you
   find which load pushed the card over.
 - `_opt_flag()` — tolerate `true`, `"true"`, `1` from the UI.
+- `_probe_pinned_memory()` — the host-memory pinning guard (see 3.4). Copy it into any ComfyUI worker that offloads
+  weights; it is the difference between one log line and a thousand `Pin error.` lines on Docker Desktop.
 - Its `CMD` is bare `python worker_runpod.py`; the `--rp_serve_api --rp_api_port …` flags come from the registry's
   `command`. Either place works — keep the flags and the port in **one** place.
 
@@ -173,6 +175,12 @@ refuses paths outside it.
 - `comfy.model_management.EXTRA_RESERVED_VRAM = 6 * 1024**3` makes ComfyUI offload instead of pinning everything.
 - Prompt strings that produce 1024×1024 sheets at 20 GB of weights will OOM a 3090 without one of the above.
 - On an uncaught exception, unload models before re-raising so the next job starts clean.
+- **Host-memory pinning is a per-platform trap.** ComfyUI page-locks (`cudaHostRegister`) every weight it offloads and
+  logs `Pin error.` per weight when that is refused — correct, but thousands of failed calls and an unreadable log.
+  `_probe_pinned_memory()` (Appendix B) decides once, before the models load: memlock cap → a probe the size of a real
+  weight (512 MB, not 64 MB) → a brake that makes `pin_memory` a no-op after repeated genuine refusals. Do not reason
+  from `RLIMIT_MEMLOCK` alone: Docker Desktop reports it as unlimited and then refuses every gigabyte-scale
+  registration, so a 64 MB probe passes and every real pin fails. `CART_PINNED_MEMORY=off|on` overrides the decision.
 
 ### 3.5 Progress reporting (optional, and a trap)
 
@@ -379,6 +387,7 @@ When a new catalog ships, **add** a frozen copy under `tests/fixtures/cartridges
 | New file in `public/` 404s until restart | Next resolves `public/` at server start |
 | Job completes, no layer appears | result extension unknown to the UI and no `returns.layer` declared |
 | Cartridge dot sits on amber **Starting…** forever | app container cannot resolve `host.docker.internal` (Linux `docker run` without `--add-host=host.docker.internal:host-gateway`); the container is up and healthy, the app just cannot see it — `lib/worker-url.mjs` falls back to the bridge gateway, the README carries the flag |
+| `Pin error.` storm, Windows/Docker Desktop only | ComfyUI page-locking offloaded weights: WSL2 reports memlock as unlimited and refuses the real registrations, so the old memlock-only guard never fired. `_probe_pinned_memory()` + `_install_pin_brake()` in the worker settle it; `CART_PINNED_MEMORY=off` is the manual override |
 | 3×3 sheet lanes drift between frames | the sheet prompt and video prompt must describe the *same* grid; keep the walk prompt's per-cell lines intact |
 
 ---
@@ -521,7 +530,7 @@ multiples of 32; the video defaults smaller (1024) because the H3 stage is the
 expensive one.
 """
 
-import os, shutil, requests, random, time, uuid, boto3, runpod
+import os, shutil, requests, random, time, uuid, boto3, runpod, logging
 from pathlib import Path
 from urllib.parse import urlsplit
 from datetime import datetime
@@ -696,38 +705,114 @@ from comfy_extras.nodes_logic import SwitchNode as ComfySwitchNode
 from comfy_extras.nodes_math import MathExpressionNode as ComfyMathExpression
 
 
-def _probe_pinned_memory():
-    """Turn off ComfyUI host-memory pinning when the container forbids page locking.
+def _disable_pinning(reason):
+    """Hard off: ComfyUI will not page-lock anything else."""
+    comfy_mm.MAX_PINNED_MEMORY = 0
+    print(f"[vram] host memory pinning disabled: {reason}", flush=True)
+    return False
 
-    The video stage reserves VRAM, so part of the UNet is offloaded to host RAM and
-    ComfyUI pins those buffers with cudaHostRegister for faster transfers. Containers
-    usually cap RLIMIT_MEMLOCK (64 MB is the common default), so every multi-GB pin
-    fails and ComfyUI logs "Pin error." once per weight while the transfer falls back
-    to pageable memory anyway. Check the limit up front and disable pinning outright
-    instead of flooding the log; a small probe covers the cases where the limit looks
-    generous but locking is still refused.
+
+def _install_pin_brake(limit=8):
+    """Stop trying to pin after `limit` genuine refusals.
+
+    The up-front probe cannot be trusted on its own: a platform may register a
+    moderate buffer and still refuse the sizes ComfyUI actually asks for (Docker
+    Desktop on WSL2 does exactly that). This is the guarantee. ComfyUI logs
+    "Pin error." only when `cudaHostRegister` itself returned an error, so the
+    log is the reliable failure signal — count those and, once there are enough,
+    make `pin_memory` a no-op.
+
+    `pin_memory` is swapped instead of zeroing `MAX_PINNED_MEMORY`, because
+    `unpin_memory()` short-circuits on that zero too and would leak whatever was
+    registered before the brake tripped.
     """
+    if not hasattr(comfy_mm, "pin_memory"):
+        return False  # ComfyUI without pinned-memory support
+    state = {"refused": 0, "tripped": False}
+
+    class _Brake(logging.Handler):
+        def emit(self, record):
+            if state["tripped"]:
+                return
+            try:
+                message = record.getMessage()
+            except Exception:
+                return
+            if "pin error" not in message.lower():
+                return
+            state["refused"] += 1
+            if state["refused"] < limit:
+                return
+            state["tripped"] = True
+            comfy_mm.pin_memory = lambda *args, **kwargs: False
+            print(f"[vram] cudaHostRegister refused {state['refused']} times; "
+                  f"offload continues unpinned", flush=True)
+
+    logging.getLogger().addHandler(_Brake(level=logging.WARNING))
+    return True
+
+
+def _probe_pinned_memory():
+    """Decide once whether ComfyUI may page-lock the weights it offloads.
+
+    The video stage reserves VRAM, so part of the UNet is offloaded to host RAM
+    and ComfyUI pins those buffers with cudaHostRegister for faster transfers.
+    When the pin is refused it logs "Pin error." once per weight and copies over
+    pageable memory anyway — correct, but thousands of failed calls and an
+    unreadable log. Whether it is refused depends on the platform:
+
+      * Docker on Linux caps RLIMIT_MEMLOCK (64 MB typical, 64 KB on some
+        hosts), so the limit check settles it before a single pin is attempted.
+      * Docker Desktop (WSL2) reports the limit as unlimited, so that check is
+        skipped and a small registration even succeeds — while the gigabyte
+        scale registrations ComfyUI asks for are refused. This is the case that
+        used to produce a "Pin error." storm on Windows only.
+
+    Hence a probe the size of a real weight instead of a token 64 MB, and the
+    brake in `_install_pin_brake()` for whatever the probe gets wrong.
+    `CART_PINNED_MEMORY=off` forces pinning off, `=on` keeps it (the brake still
+    applies).
+    """
+    choice = os.getenv("CART_PINNED_MEMORY", "").strip().lower()
+    if choice in ("0", "off", "false", "no"):
+        return _disable_pinning("CART_PINNED_MEMORY=off")
+    if choice in ("1", "on", "true", "yes"):
+        print("[vram] pinning kept enabled by CART_PINNED_MEMORY", flush=True)
+        _install_pin_brake()
+        return True
+
     try:
         import resource
         soft, _ = resource.getrlimit(resource.RLIMIT_MEMLOCK)
     except Exception:
         soft = None
     if soft is not None and soft != resource.RLIM_INFINITY and soft < 2 * 1024 ** 3:
-        comfy_mm.MAX_PINNED_MEMORY = 0
         limit = f"{soft / 2**20:.0f} MB" if soft >= 2**20 else f"{soft / 1024:.0f} KB"
-        print(f"[vram] memlock limit is {limit}, too small to pin offloaded weights; "
-              f"running unpinned", flush=True)
-        return False
+        return _disable_pinning(f"memlock limit is {limit}")
+
+    probe_bytes = 512 * 1024 ** 2
     try:
-        probe = torch.empty(64 * 1024 * 1024, dtype=torch.uint8)
-        if torch.cuda.cudart().cudaHostRegister(probe.data_ptr(), probe.numel(), 1) == 0:
-            torch.cuda.cudart().cudaHostUnregister(probe.data_ptr())
-            return True
+        available = os.sysconf("SC_AVPHYS_PAGES") * os.sysconf("SC_PAGE_SIZE")
+        if available and available < 4 * 1024 ** 3:
+            probe_bytes = 64 * 1024 ** 2
+    except Exception:
+        pass
+
+    probe = None
+    try:
+        probe = torch.empty(probe_bytes, dtype=torch.uint8)
+        registered = torch.cuda.cudart().cudaHostRegister(probe.data_ptr(), probe.numel(), 1)
+        if registered != 0:
+            return _disable_pinning(
+                f"cudaHostRegister refused a {probe_bytes // 2**20} MB buffer")
+        torch.cuda.cudart().cudaHostUnregister(probe.data_ptr())
+        print(f"[vram] pinning probe ok ({probe_bytes // 2**20} MB registered)", flush=True)
+        _install_pin_brake()
+        return True
     except Exception as err:
-        print(f"[vram] pinning probe failed ({err})", flush=True)
-    comfy_mm.MAX_PINNED_MEMORY = 0
-    print("[vram] host memory pinning denied; offload runs unpinned", flush=True)
-    return False
+        return _disable_pinning(f"pinning probe failed ({err})")
+    finally:
+        del probe
 
 
 _probe_pinned_memory()
