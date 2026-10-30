@@ -34,6 +34,7 @@ import {
   primaryInput,
   resultKind,
   schemaVersionOf,
+  visibleCartridges,
 } from '../lib/cartridge-schema.mjs'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
@@ -235,4 +236,29 @@ test('capabilities are advisory: missing ones are reported, not fatal', () => {
   const service = normalizeService({ ...minimal, requires: { capabilities: ['param.bezier', 'layer.3d'] } })
   assert.deepEqual(service.missingCapabilities, ['param.bezier'])
   assert.ok(CAPABILITIES.includes('layer.3d'))
+})
+
+// --------------------------------------------------------------------------- #
+// panel visibility
+// --------------------------------------------------------------------------- #
+
+test('cartridges whose worker is down are hidden from the panel', () => {
+  const running = { id: 'a', workerId: 'w1' }
+  const stopped = { id: 'b', workerId: 'w2' }
+  const uninstalled = { id: 'c', workerId: 'w3' }
+  const unknownWorker = { id: 'd', workerId: 'w4' }
+  const states = {
+    w1: { state: 'running' },
+    w2: { state: 'stopped' },
+    w3: { state: 'missing' },
+  }
+  const shown = visibleCartridges([running, stopped, uninstalled, unknownWorker], states)
+  assert.deepEqual(shown.map((s) => s.id), ['a', 'd'])
+})
+
+test('without Docker state nothing is hidden', () => {
+  const services = [{ id: 'a', workerId: 'w1' }, { id: 'b', workerId: 'w2' }]
+  assert.equal(visibleCartridges(services, {}).length, 2)
+  assert.equal(visibleCartridges(services, undefined).length, 2)
+  assert.deepEqual(visibleCartridges(undefined, {}), [])
 })

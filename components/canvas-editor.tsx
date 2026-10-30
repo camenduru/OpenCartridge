@@ -87,6 +87,7 @@ import {
   paramControl,
   primaryInput,
   resultKind,
+  visibleCartridges,
 } from "@/lib/cartridge-schema.mjs"
 import { useTheme } from 'next-themes'
 import dynamic from 'next/dynamic'
@@ -601,11 +602,11 @@ export function CanvasEditor() {
   }, [])
 
   useEffect(() => {
-    if (!showServiceSelector) return
+    if (!showServiceSelector && !showParametersPanel) return
     void refreshWorkerStates()
     const timer = setInterval(() => { void refreshWorkerStates() }, 4000)
     return () => clearInterval(timer)
-  }, [showServiceSelector, refreshWorkerStates])
+  }, [showServiceSelector, showParametersPanel, refreshWorkerStates])
 
   const controlWorker = async (workerId: string, action: "install" | "start" | "stop" | "delete") => {
     try {
@@ -628,6 +629,11 @@ export function CanvasEditor() {
 
   // Allowed services based on use local api toggle
   const allowedServices = availableServices.map(s => s.id)
+
+  // A cartridge whose worker is known to be down is hidden from the left panel:
+  // it cannot run, and starting the worker belongs to the Cartridges popup.
+  // With no Docker state (socket not mounted) nothing is hidden.
+  const visibleAiServices = visibleCartridges(aiServices, workerStates)
 
   // Filtered services for the selector
   const filteredAvailableServices = availableServices.filter((service) => {
@@ -5283,9 +5289,9 @@ export function CanvasEditor() {
                 {/* AI Cartridges List */}
                 <div className="space-y-2">
                   <div className="space-y-1">
-                    {aiServices.map((service, index) => {
+                    {visibleAiServices.map((service, index) => {
                       const isSelected = selectedServiceId === service.id
-                      const actualIndex = aiServices.length - 1 - index
+                      const actualIndex = visibleAiServices.length - 1 - index
                       return (
                         <div
                           key={service.id}
@@ -5318,7 +5324,7 @@ export function CanvasEditor() {
                                 e.stopPropagation()
                                 moveServiceDown(service.id)
                               }}
-                              disabled={actualIndex === aiServices.length - 1}
+                              disabled={actualIndex === visibleAiServices.length - 1}
                               className="h-5 w-5 p-0"
                               title="Move up"
                             >
@@ -5341,6 +5347,11 @@ export function CanvasEditor() {
                         </div>
                       )
                     })}
+                    {visibleAiServices.length === 0 && aiServices.length > 0 && (
+                      <p className="text-xs text-muted-foreground px-1 py-2">
+                        No running cartridges — open 💾 Cartridges to start a worker.
+                      </p>
+                    )}
                   </div>
                 </div>
 
