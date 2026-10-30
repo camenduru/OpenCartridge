@@ -388,6 +388,7 @@ When a new catalog ships, **add** a frozen copy under `tests/fixtures/cartridges
 | Job completes, no layer appears | result extension unknown to the UI and no `returns.layer` declared |
 | Cartridge dot sits on amber **Starting…** forever | app container cannot resolve `host.docker.internal` (Linux `docker run` without `--add-host=host.docker.internal:host-gateway`); the container is up and healthy, the app just cannot see it — `lib/worker-url.mjs` falls back to the bridge gateway, the README carries the flag |
 | `Pin error.` storm, Windows/Docker Desktop only | ComfyUI page-locking offloaded weights: WSL2 reports memlock as unlimited and refuses the real registrations, so the old memlock-only guard never fired. `_probe_pinned_memory()` + `_install_pin_brake()` in the worker settle it; `CART_PINNED_MEMORY=off` is the manual override |
+| Job FAILED at cleanup (`PermissionError: … /content/ComfyUI/output`) although the artifact was produced | `shutil.rmtree` in the worker's `finally` ran as a different user than the directory's owner, or on a read-only mount. Cleanup is now best-effort: a finished job must never be turned into FAILED by discarding a temp directory |
 | 3×3 sheet lanes drift between frames | the sheet prompt and video prompt must describe the *same* grid; keep the walk prompt's per-cell lines intact |
 
 ---
