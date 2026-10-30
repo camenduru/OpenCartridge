@@ -1,5 +1,7 @@
 # ⚡ OpenCartridge
 
+https://github.com/user-attachments/assets/4c323c93-db7b-40b9-a6d3-7b48e577aef1
+
 <img width="1920" height="1080" alt="Screenshot 2026-10-30 082115" src="https://github.com/user-attachments/assets/150de80d-2081-4a09-b4aa-e07d74120ddb" />
 
 <img width="1920" height="1080" alt="Screenshot 2026-10-30 015836" src="https://github.com/user-attachments/assets/c87b4638-f353-4c56-8479-9179b7879e7d" />
