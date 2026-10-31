@@ -1,0 +1,301 @@
+[
+  {
+    "home": true,
+    "id": "breeze-tts-plain",
+    "name": "Breeze TTS Plain",
+    "description": "Text in, one voice take out: Breeze TTS 2 reads your line in the model's default voice — bilingual EN/ZH with inline vocal events.",
+    "category": "audio",
+    "icon": "Mic",
+    "inputTypes": [],
+    "workerId": "",
+    "cost": "0",
+    "processingTime": "15",
+    "delay": "12000",
+    "overview": "Plain TTS: just text, the fastest path with no reference and no guidance. Breeze TTS 2 turns the line into a 24 kHz mono WAV take. Inline vocal events (laugh), (cough), (clears throat), (sigh) work in both English and Chinese. Seed 0 picks one at random. The first job on a cold container waits for the model to load (~30-40 s on an RTX 3090) instead of failing.",
+    "divisible": 32,
+    "examples": {
+      "input": [
+        "https://huggingface.co/camenduru/wav/resolve/main/Breeze_TTS_Direct-OpenCartridge-1793428193897.txt"
+      ],
+      "output": [
+        "https://huggingface.co/camenduru/wav/resolve/main/Breeze_TTS_Direct-OpenCartridge-1793428193897.wav"
+      ]
+    },
+    "parameters": [
+      {
+        "name": "job_id",
+        "type": "string",
+        "label": "Job ID",
+        "required": false,
+        "defaultValue": "",
+        "ui": false
+      },
+      {
+        "name": "text",
+        "type": "string",
+        "label": "Text",
+        "required": true,
+        "defaultValue": "",
+        "ui": true
+      },
+      {
+        "name": "seed",
+        "type": "number",
+        "label": "Seed",
+        "defaultValue": 42,
+        "ui": false
+      },
+      {
+        "name": "cfg_scale",
+        "type": "number",
+        "label": "CFG Scale",
+        "defaultValue": 1,
+        "ui": false
+      },
+      {
+        "name": "mode",
+        "type": "string",
+        "label": "Mode",
+        "required": false,
+        "defaultValue": "plain",
+        "ui": false
+      }
+    ]
+  },
+  {
+    "id": "breeze-tts-design",
+    "name": "Breeze TTS Design",
+    "description": "Invent a voice from a description: Breeze TTS 2 speaks your line in a voice only described in words — bilingual EN/ZH with inline vocal events.",
+    "category": "audio",
+    "icon": "Mic",
+    "inputTypes": [],
+    "workerId": "",
+    "cost": "0",
+    "processingTime": "20",
+    "delay": "12000",
+    "overview": "Voice design: no reference audio. Describe the voice you want — \"A warm, thoughtful young woman with a calm, reflective delivery.\" — and Breeze TTS 2 speaks your line in it, matching the instruction language to the text. Inline vocal events (laugh), (cough), (clears throat), (sigh) work in both English and Chinese. Seed 0 picks one at random. The first job on a cold container waits for the model to load (~30-40 s on an RTX 3090) instead of failing.",
+    "divisible": 32,
+    "examples": {
+      "input": [
+        "https://huggingface.co/camenduru/wav/resolve/main/Breeze_TTS_Direct-OpenCartridge-1793428193897.txt"
+      ],
+      "output": [
+        "https://huggingface.co/camenduru/wav/resolve/main/Breeze_TTS_Direct-OpenCartridge-1793428193897.wav"
+      ]
+    },
+    "parameters": [
+      {
+        "name": "job_id",
+        "type": "string",
+        "label": "Job ID",
+        "required": false,
+        "defaultValue": "",
+        "ui": false
+      },
+      {
+        "name": "text",
+        "type": "string",
+        "label": "Text",
+        "required": true,
+        "defaultValue": "",
+        "ui": true
+      },
+      {
+        "name": "instruction",
+        "type": "string",
+        "label": "Voice Description",
+        "required": true,
+        "defaultValue": "",
+        "ui": true
+      },
+      {
+        "name": "seed",
+        "type": "number",
+        "label": "Seed",
+        "defaultValue": 42,
+        "ui": false
+      },
+      {
+        "name": "cfg_scale",
+        "type": "number",
+        "label": "CFG Scale",
+        "defaultValue": 4,
+        "ui": false
+      },
+      {
+        "name": "mode",
+        "type": "string",
+        "label": "Mode",
+        "required": false,
+        "defaultValue": "design",
+        "ui": false
+      }
+    ]
+  },
+  {
+    "id": "breeze-tts-clone",
+    "name": "Breeze TTS Clone",
+    "description": "Copy a speaker's timbre: select an audio clip plus its exact transcript, and Breeze TTS 2 speaks your line in that voice.",
+    "category": "audio",
+    "icon": "Mic",
+    "inputTypes": [
+      "audio"
+    ],
+    "workerId": "",
+    "cost": "0",
+    "processingTime": "30",
+    "delay": "12000",
+    "overview": "Voice clone: select one audio layer on the canvas and fill its exact transcript — the clip and the transcript travel together, and the model cannot copy a voice without knowing what the clip says. Only clone voices you have consent to use. Inline vocal events work in both English and Chinese. Seed 0 picks one at random. The first job on a cold container waits for the model to load (~30-40 s on an RTX 3090) instead of failing.",
+    "divisible": 32,
+    "examples": {
+      "input": [
+        "https://huggingface.co/camenduru/wav/resolve/main/Breeze_TTS_Direct-OpenCartridge-1793428193897.txt"
+      ],
+      "output": [
+        "https://huggingface.co/camenduru/wav/resolve/main/Breeze_TTS_Direct-OpenCartridge-1793428193897.wav"
+      ]
+    },
+    "parameters": [
+      {
+        "name": "job_id",
+        "type": "string",
+        "label": "Job ID",
+        "required": false,
+        "defaultValue": "",
+        "ui": false
+      },
+      {
+        "name": "input_audio",
+        "type": "file",
+        "label": "Reference Audio",
+        "required": true,
+        "ui": false
+      },
+      {
+        "name": "text",
+        "type": "string",
+        "label": "Text",
+        "required": true,
+        "defaultValue": "",
+        "ui": true
+      },
+      {
+        "name": "ref_text",
+        "type": "string",
+        "label": "Reference Transcript",
+        "required": true,
+        "defaultValue": "",
+        "ui": true
+      },
+      {
+        "name": "seed",
+        "type": "number",
+        "label": "Seed",
+        "defaultValue": 42,
+        "ui": false
+      },
+      {
+        "name": "cfg_scale",
+        "type": "number",
+        "label": "CFG Scale",
+        "defaultValue": 1,
+        "ui": false
+      },
+      {
+        "name": "mode",
+        "type": "string",
+        "label": "Mode",
+        "required": false,
+        "defaultValue": "clone",
+        "ui": false
+      }
+    ]
+  },
+  {
+    "id": "breeze-tts-direct",
+    "name": "Breeze TTS Direct",
+    "description": "Steer tone and delivery: keep a reference speaker's identity while directing emotion, pace and delivery with a written instruction.",
+    "category": "audio",
+    "icon": "Mic",
+    "inputTypes": [
+      "audio"
+    ],
+    "workerId": "",
+    "cost": "0",
+    "processingTime": "30",
+    "delay": "12000",
+    "overview": "Voice direction: select one audio layer plus its exact transcript, then direct the delivery — \"Speak slowly with a restrained, serious tone.\" The speaker's identity carries over; the instruction steers how the line is delivered. Only direct voices you have consent to use. Seed 0 picks one at random. The first job on a cold container waits for the model to load (~30-40 s on an RTX 3090) instead of failing.",
+    "divisible": 32,
+    "examples": {
+      "input": [
+        "https://huggingface.co/camenduru/wav/resolve/main/Breeze_TTS_Direct-OpenCartridge-1793428193897.txt"
+      ],
+      "output": [
+        "https://huggingface.co/camenduru/wav/resolve/main/Breeze_TTS_Direct-OpenCartridge-1793428193897.wav"
+      ]
+    },
+    "parameters": [
+      {
+        "name": "job_id",
+        "type": "string",
+        "label": "Job ID",
+        "required": false,
+        "defaultValue": "",
+        "ui": false
+      },
+      {
+        "name": "input_audio",
+        "type": "file",
+        "label": "Reference Audio",
+        "required": true,
+        "ui": false
+      },
+      {
+        "name": "text",
+        "type": "string",
+        "label": "Text",
+        "required": true,
+        "defaultValue": "",
+        "ui": true
+      },
+      {
+        "name": "ref_text",
+        "type": "string",
+        "label": "Reference Transcript",
+        "required": true,
+        "defaultValue": "",
+        "ui": true
+      },
+      {
+        "name": "instruction",
+        "type": "string",
+        "label": "Delivery Instruction",
+        "required": true,
+        "defaultValue": "",
+        "ui": true
+      },
+      {
+        "name": "seed",
+        "type": "number",
+        "label": "Seed",
+        "defaultValue": 42,
+        "ui": false
+      },
+      {
+        "name": "cfg_scale",
+        "type": "number",
+        "label": "CFG Scale",
+        "defaultValue": 4,
+        "ui": false
+      },
+      {
+        "name": "mode",
+        "type": "string",
+        "label": "Mode",
+        "required": false,
+        "defaultValue": "direct",
+        "ui": false
+      }
+    ]
+  }
+]

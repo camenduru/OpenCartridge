@@ -1,0 +1,240 @@
+[
+  {
+    "home": true,
+    "id": "yue2",
+    "name": "YuE2 Text to Music",
+    "description": "Generate a complete song — vocals and instruments — from a style description and lyrics, with an optional editable ABC melody plan.",
+    "category": "audio",
+    "icon": "AudioWaveform",
+    "inputTypes": [],
+    "workerId": "",
+    "cost": "0.1",
+    "processingTime": "600",
+    "delay": "30000",
+    "overview": "YuE2 3B runs two language models before a short diffusion pass. With ABC Planning on, the first LM writes a symbolic plan (melody, and chords in Full mode) that steers the song; the second turns style, lyrics and that plan into acoustic conditioning sized to the requested duration; a 32-step dpm_2 sampler then fills the audio latent and the VAE decodes it to a song. Keep musical instructions in Style and only sung words in Lyrics.",
+    "examples": {
+      "input": [
+        "https://examples.tost.ai/YuE2_Text_to_Music-OpenCartridge-1793421417583.txt"
+      ],
+      "output": [
+        "https://huggingface.co/camenduru/flac/resolve/main/YuE2_Text_to_Music-OpenCartridge-1793421417583.flac"
+      ]
+    },
+    "parameters": [
+      {
+        "name": "job_id",
+        "type": "string",
+        "label": "Job ID",
+        "required": false,
+        "defaultValue": "",
+        "ui": false
+      },
+      {
+        "name": "style_prompt",
+        "type": "string",
+        "label": "Style",
+        "required": true,
+        "defaultValue": "Upbeat indie pop with warm female vocals, bright electric guitars, punchy drums, melodic bass, and subtle synth layers. Catchy and energetic, with an uplifting summer atmosphere, a memorable chorus, and polished modern production.",
+        "ui": true
+      },
+      {
+        "name": "lyrics",
+        "type": "string",
+        "label": "Lyrics",
+        "required": true,
+        "defaultValue": "[Verse]\nMorning light across the window\nCity waking down below\nI can hear the streets are calling\nFeels like somewhere we should go\n\n[Chorus]\nRun with me into the sunlight\nLeave the shadows far behind\nWe don't need to know tomorrow\nTonight the whole world feels alive\n\n[Verse]\nRadio playing through the open door\nLaughing like we did before\nEvery mile becomes a memory\nAnd I just want a little more\n\n[Chorus]\nRun with me into the sunlight\nLeave the shadows far behind\nWe don't need to know tomorrow\nTonight the whole world feels alive",
+        "ui": true
+      },
+      {
+        "name": "abc_planning",
+        "type": "boolean",
+        "label": "ABC Planning",
+        "defaultValue": true,
+        "ui": true
+      },
+      {
+        "name": "mode",
+        "type": "select",
+        "label": "Planning Mode",
+        "defaultValue": "full",
+        "options": [
+          "full",
+          "melody"
+        ],
+        "ui": true
+      },
+      {
+        "name": "max_duration",
+        "type": "slider",
+        "label": "Max Duration (s)",
+        "defaultValue": 120,
+        "min": 10,
+        "max": 900,
+        "step": 10,
+        "ui": true
+      },
+      {
+        "name": "seed",
+        "type": "number",
+        "label": "Seed",
+        "defaultValue": 0,
+        "ui": true
+      },
+      {
+        "name": "ckpt_name",
+        "type": "string",
+        "label": "Checkpoint",
+        "defaultValue": "yue2_3b_bf16.safetensors",
+        "ui": false
+      },
+      {
+        "name": "abc_max_tokens",
+        "type": "number",
+        "label": "Max ABC Tokens",
+        "defaultValue": 8192,
+        "ui": false
+      },
+      {
+        "name": "abc_temperature",
+        "type": "number",
+        "label": "ABC Temperature",
+        "defaultValue": 0.7,
+        "ui": false
+      },
+      {
+        "name": "abc_top_p",
+        "type": "number",
+        "label": "ABC Top P",
+        "defaultValue": 0.9,
+        "ui": false
+      },
+      {
+        "name": "abc_top_k",
+        "type": "number",
+        "label": "ABC Top K",
+        "defaultValue": 30,
+        "ui": false
+      },
+      {
+        "name": "abc_repetition_penalty",
+        "type": "number",
+        "label": "ABC Repetition Penalty",
+        "defaultValue": 1.005,
+        "ui": false
+      },
+      {
+        "name": "abc_penalty_window",
+        "type": "number",
+        "label": "ABC Penalty Window",
+        "defaultValue": 100,
+        "ui": false
+      },
+      {
+        "name": "music_temperature",
+        "type": "number",
+        "label": "Music Temperature",
+        "defaultValue": 1,
+        "ui": false
+      },
+      {
+        "name": "music_top_p",
+        "type": "number",
+        "label": "Music Top P",
+        "defaultValue": 0.95,
+        "ui": false
+      },
+      {
+        "name": "music_top_k",
+        "type": "number",
+        "label": "Music Top K",
+        "defaultValue": 100,
+        "ui": false
+      },
+      {
+        "name": "music_repetition_penalty",
+        "type": "number",
+        "label": "Music Repetition Penalty",
+        "defaultValue": 1.2,
+        "ui": false
+      },
+      {
+        "name": "music_cfg_scale",
+        "type": "number",
+        "label": "Music CFG (0 = auto)",
+        "defaultValue": 0,
+        "ui": false
+      },
+      {
+        "name": "sampler_steps",
+        "type": "number",
+        "label": "Sampler Steps",
+        "defaultValue": 32,
+        "ui": false
+      },
+      {
+        "name": "sampler_cfg",
+        "type": "slider",
+        "label": "Sampler CFG",
+        "defaultValue": 1,
+        "min": 0,
+        "max": 10,
+        "step": 0.1,
+        "ui": false
+      },
+      {
+        "name": "sampler_name",
+        "type": "select",
+        "label": "Sampler",
+        "defaultValue": "dpm_2",
+        "options": [
+          "dpm_2",
+          "euler",
+          "dpmpp_2m",
+          "res_multistep"
+        ],
+        "ui": false
+      },
+      {
+        "name": "scheduler",
+        "type": "select",
+        "label": "Scheduler",
+        "defaultValue": "sgm_uniform",
+        "options": [
+          "sgm_uniform",
+          "simple",
+          "normal",
+          "beta",
+          "karras"
+        ],
+        "ui": false
+      },
+      {
+        "name": "audio_format",
+        "type": "select",
+        "label": "Audio Format",
+        "defaultValue": "flac",
+        "options": [
+          "flac",
+          "mp3",
+          "opus"
+        ],
+        "ui": false
+      },
+      {
+        "name": "audio_quality",
+        "type": "select",
+        "label": "Audio Quality",
+        "defaultValue": "V0",
+        "options": [
+          "V0",
+          "64k",
+          "96k",
+          "128k",
+          "192k",
+          "320k"
+        ],
+        "ui": false
+      }
+    ]
+  }
+]

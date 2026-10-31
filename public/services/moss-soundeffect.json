@@ -1,0 +1,103 @@
+[
+  {
+    "home": true,
+    "id": "moss-soundeffect",
+    "name": "MOSS Sound Effect",
+    "description": "One caption in, one sound effect out: MOSS-SoundEffect v2.0 generates up to 30 s of 48 kHz audio — footsteps, rain, doors, crowds — in English or 中文.",
+    "category": "audio",
+    "icon": "AudioWaveform",
+    "inputTypes": [],
+    "workerId": "",
+    "cost": "0",
+    "processingTime": "30",
+    "delay": "12000",
+    "overview": "MOSS-SoundEffect v2.0 is a flow-matching text-to-sound model: describe the scene and it synthesises the effect as mono 48 kHz WAV, up to 30 seconds. Captions work in English and Chinese. Duration is written into the prompt exactly the way the model was trained to read it (\" duration: <X>s\") — switch that tag off to take the caption verbatim. Quality knobs on the card: Inference Steps (the model's default 100; raise to 150 for the most detail, drop to ~40 for drafts) and CFG Scale (4.0 balances caption adherence — higher is more literal, lower is smoother). Same seed and settings give the same take; a mushy result is often just an unlucky seed — reroll. Sigma shift and a negative prompt ride along hidden with sensible defaults. The first job on a cold container loads ~10.5 GB of weights (~2 min) instead of failing.",
+    "divisible": 32,
+    "examples": {
+      "input": [
+        "https://huggingface.co/camenduru/wav/resolve/main/MOSS_Sound_Effect-OpenCartridge-1793433485586.txt"
+      ],
+      "output": [
+        "https://huggingface.co/camenduru/wav/resolve/main/MOSS_Sound_Effect-OpenCartridge-1793433485586.wav"
+      ]
+    },
+    "parameters": [
+      {
+        "name": "job_id",
+        "type": "string",
+        "label": "Job ID",
+        "required": false,
+        "defaultValue": "",
+        "ui": false
+      },
+      {
+        "name": "prompt",
+        "type": "string",
+        "label": "Caption",
+        "required": true,
+        "defaultValue": "",
+        "ui": true
+      },
+      {
+        "name": "seconds",
+        "type": "slider",
+        "label": "Duration (s)",
+        "defaultValue": 10,
+        "min": 0.5,
+        "max": 30,
+        "step": 0.5,
+        "ui": true
+      },
+      {
+        "name": "negative_prompt",
+        "type": "string",
+        "label": "Negative Prompt",
+        "required": false,
+        "defaultValue": "",
+        "ui": true
+      },
+      {
+        "name": "steps",
+        "type": "slider",
+        "label": "Inference Steps",
+        "defaultValue": 100,
+        "min": 10,
+        "max": 150,
+        "step": 1,
+        "ui": true
+      },
+      {
+        "name": "cfg_scale",
+        "type": "slider",
+        "label": "CFG Scale",
+        "defaultValue": 4,
+        "min": 1,
+        "max": 8,
+        "step": 0.5,
+        "ui": true
+      },
+      {
+        "name": "sigma_shift",
+        "type": "number",
+        "label": "Sigma Shift",
+        "defaultValue": 5,
+        "ui": false
+      },
+      {
+        "name": "seed",
+        "type": "number",
+        "label": "Seed",
+        "defaultValue": 0,
+        "ui": false
+      },
+      {
+        "name": "append_duration_suffix",
+        "type": "boolean",
+        "label": "Duration Tag",
+        "required": false,
+        "defaultValue": true,
+        "ui": false
+      }
+    ]
+  }
+]

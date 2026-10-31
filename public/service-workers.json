@@ -95,5 +95,77 @@
         "s3_bucket_folder": "output"
       }
     }
+  },
+  {
+    "id": "breeze-tts",
+    "name": "Breeze TTS",
+    "catalog": "services/breeze-tts.json",
+    "apiUrl": "http://host.docker.internal:8004",
+    "uploadUrl": "http://localhost:9000",
+    "workerUploadUrl": "http://host.docker.internal:9000",
+    "container": {
+      "name": "breeze-tts",
+      "image": "camenduru/breeze-tts:latest",
+      "port": 8004,
+      "hostPort": 8004,
+      "gpus": true,
+      "command": ["python", "/content/worker_runpod.py", "--rp_serve_api", "--rp_api_port", "8004", "--rp_api_host", "0.0.0.0", "--rp_log_level", "INFO"],
+      "env": {
+        "s3_access_key_id": "${s3_access_key_id}",
+        "s3_secret_access_key": "${s3_secret_access_key}",
+        "s3_endpoint_url": "http://host.docker.internal:9000",
+        "s3_region_name": "us-east-1",
+        "s3_bucket_name": "tost",
+        "s3_bucket_folder": "output"
+      }
+    }
+  },
+  {
+    "id": "yue2",
+    "name": "YuE2 Music",
+    "catalog": "services/yue2.json",
+    "apiUrl": "http://host.docker.internal:8005",
+    "uploadUrl": "http://localhost:9000",
+    "workerUploadUrl": "http://host.docker.internal:9000",
+    "container": {
+      "name": "yue2",
+      "image": "camenduru/yue2:latest",
+      "port": 8000,
+      "hostPort": 8005,
+      "gpus": true,
+      "command": ["python", "worker_runpod.py", "--rp_serve_api", "--rp_api_port", "8000", "--rp_api_host", "0.0.0.0", "--rp_log_level", "DEBUG", "--rp_debugger"],
+      "env": {
+        "s3_access_key_id": "${s3_access_key_id}",
+        "s3_secret_access_key": "${s3_secret_access_key}",
+        "s3_endpoint_url": "http://host.docker.internal:9000",
+        "s3_region_name": "us-east-1",
+        "s3_bucket_name": "tost",
+        "s3_bucket_folder": "output"
+      }
+    }
+  },
+  {
+    "id": "moss-soundeffect",
+    "name": "MOSS Sound Effect",
+    "catalog": "services/moss-soundeffect.json",
+    "apiUrl": "http://host.docker.internal:8006",
+    "uploadUrl": "http://localhost:9000",
+    "workerUploadUrl": "http://host.docker.internal:9000",
+    "container": {
+      "name": "moss-soundeffect",
+      "image": "camenduru/moss-soundeffect:latest",
+      "port": 8006,
+      "hostPort": 8006,
+      "gpus": true,
+      "command": ["python", "/content/worker_runpod.py", "--rp_serve_api", "--rp_api_port", "8006", "--rp_api_host", "0.0.0.0", "--rp_log_level", "INFO"],
+      "env": {
+        "s3_access_key_id": "${s3_access_key_id}",
+        "s3_secret_access_key": "${s3_secret_access_key}",
+        "s3_endpoint_url": "http://host.docker.internal:9000",
+        "s3_region_name": "us-east-1",
+        "s3_bucket_name": "tost",
+        "s3_bucket_folder": "output"
+      }
+    }
   }
 ]

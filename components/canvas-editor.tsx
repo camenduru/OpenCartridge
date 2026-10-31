@@ -3635,9 +3635,15 @@ export function CanvasEditor() {
       if (!primarySelectedLayer || primarySelectedLayer.type !== 'video') return
       inputLayers = [primarySelectedLayer]
     } else if (inputAudioParam) {
-      // Service requires 1 audio layer
-      if (!primarySelectedLayer || primarySelectedLayer.type !== 'audio') return
-      inputLayers = [primarySelectedLayer]
+      // Service requires 1 audio layer — unless the reference is optional
+      // (`required: false`), which binds only when an audio layer is selected;
+      // with none, the job runs from its parameters alone
+      if (inputAudioParam.required !== false) {
+        if (!primarySelectedLayer || primarySelectedLayer.type !== 'audio') return
+        inputLayers = [primarySelectedLayer]
+      } else if (primarySelectedLayer && primarySelectedLayer.type === 'audio') {
+        inputLayers = [primarySelectedLayer]
+      }
     } else if (inputImage1Param && inputImage2Param && inputImage3Param) {
       // Service requires 3 image/video layers
       if (selectedLayers.length !== 3 || !selectedLayers.every(layer => layer.type === 'image' || layer.type === 'video')) return
@@ -3647,13 +3653,17 @@ export function CanvasEditor() {
       if (selectedLayers.length !== 2 || !selectedLayers.every(layer => layer.type === 'image' || layer.type === 'video')) return
       inputLayers = selectedLayers
     } else {
-      // Service requires 1 layer
-      if (!primarySelectedLayer) return
-      // If service has image input parameters, require image or video layer
-      if (inputImageParam || inputImage1Param || inputImage2Param || inputImage3Param || inputImageCheckParam || startImageParam || endImageParam) {
-        if (primarySelectedLayer.type !== 'image' && primarySelectedLayer.type !== 'video') return
+      // Service requires 1 layer — unless it declares no file input at all
+      // (a text-only service like text-to-music), which runs from its
+      // parameters alone and uploads nothing.
+      const takesLayer = Boolean(inputImageParam || inputImage1Param || inputImage2Param || inputImage3Param || inputImageCheckParam || startImageParam || endImageParam || isTextService)
+      if (takesLayer) {
+        if (!primarySelectedLayer) return
+        // If service has image input parameters, require image or video layer
+        if ((inputImageParam || inputImage1Param || inputImage2Param || inputImage3Param || inputImageCheckParam || startImageParam || endImageParam) &&
+            primarySelectedLayer.type !== 'image' && primarySelectedLayer.type !== 'video') return
+        inputLayers = [primarySelectedLayer]
       }
-      inputLayers = [primarySelectedLayer]
     }
 
     if (!service.apiUrl) {
@@ -3692,7 +3702,7 @@ export function CanvasEditor() {
         layerName: service.name
       },
       polling: false,
-      layerId: inputLayers[0].id,
+      layerId: inputLayers[0]?.id,
       inputLayer: inputLayers[0] // Store the actual layer data as backup
     }
 
@@ -3885,7 +3895,7 @@ export function CanvasEditor() {
       if (service.custom_size) {
         inputData.width = Math.round(service.width)
         inputData.height = Math.round(service.height)
-      } else {
+      } else if (inputLayers[0]) {
         // For services with start_image and end_image, use the biggest width and height
         if (inputLayers.length === 2 && startImageParam && endImageParam) {
           const maxWidth = Math.max(inputLayers[0].width, inputLayers[1].width)
@@ -3897,6 +3907,7 @@ export function CanvasEditor() {
           inputData.height = Math.round(inputLayers[0].height)
         }
       }
+      // Layer-less services (text-only, e.g. text-to-music) send no width/height
 
       const payload = {
         input: inputData
@@ -5767,13 +5778,25 @@ export function CanvasEditor() {
                     const startImageParam = selectedService.parameters.find((p: any) => p.name === 'start_image' && p.ui === false)
                     const endImageParam = selectedService.parameters.find((p: any) => p.name === 'end_image' && p.ui === false)
                     const inputAudioParam = selectedService.parameters.find((p: any) => p.name === 'input_audio' && p.ui === false)
+                    const inputVideoParam = selectedService.parameters.find((p: any) => p.name === 'input_video' && p.ui === false)
 
-                    if (inputAudioParam) {
-                      // Service requires 1 audio layer
+                    if (inputAudioParam && inputAudioParam.required !== false) {
+                      // Service requires 1 audio layer — an optional
+                      // (`required: false`) reference binds only when an
+                      // audio layer happens to be selected
                       if (!primarySelectedLayer || primarySelectedLayer.type !== 'audio') {
                         return (
                           <div className="text-xs text-green-600 text-center mb-3">
                             1 audio layer required for this service
+                          </div>
+                        )
+                      }
+                    } else if (inputVideoParam) {
+                      // Service requires 1 video layer
+                      if (!primarySelectedLayer || primarySelectedLayer.type !== 'video') {
+                        return (
+                          <div className="text-xs text-green-600 text-center mb-3">
+                            1 video layer required for this service
                           </div>
                         )
                       }
@@ -5844,19 +5867,28 @@ export function CanvasEditor() {
                       const startImageParam = selectedService.parameters.find((p: any) => p.name === 'start_image' && p.ui === false)
                       const endImageParam = selectedService.parameters.find((p: any) => p.name === 'end_image' && p.ui === false)
                       const inputAudioParam = selectedService.parameters.find((p: any) => p.name === 'input_audio' && p.ui === false)
-                  
+                      const inputVideoParam = selectedService.parameters.find((p: any) => p.name === 'input_video' && p.ui === false)
+
                       // For services requiring audio input, need 1 audio layer
-                      if (inputAudioParam) {
+                      // — an optional (`required: false`) reference binds only
+                      // when an audio layer happens to be selected
+                      if (inputAudioParam && inputAudioParam.required !== false) {
                         if (!primarySelectedLayer || primarySelectedLayer.type !== 'audio') return true
+                      } else if (inputVideoParam) {
+                        // For services requiring video input, need 1 video layer
+                        if (!primarySelectedLayer || primarySelectedLayer.type !== 'video') return true
                       } else if (inputImage1Param && inputImage2Param && inputImage3Param) {
                         if (selectedLayers.length !== 3 || !selectedLayers.every(layer => layer.type === 'image' || layer.type === 'video')) return true
                       } else if ((inputImage1Param && inputImage2Param) || (startImageParam && endImageParam)) {
                         if (selectedLayers.length !== 2 || !selectedLayers.every(layer => layer.type === 'image' || layer.type === 'video')) return true
                       } else {
-                        // For other services, need at least one selected layer
-                        if (!primarySelectedLayer) return true
-                        // If service has image input parameters, require image or video layer
-                        if (inputImageParam || inputImage1Param || inputImageCheckParam || inputTypes) {
+                        // For other services, need at least one selected layer —
+                        // except services that declare no file input at all
+                        // (text-only, e.g. text-to-music), which run from
+                        // their parameters alone
+                        const takesLayer = Boolean(inputImageParam || inputImage1Param || inputImageCheckParam || startImageParam || endImageParam || inputTypes)
+                        if (takesLayer) {
+                          if (!primarySelectedLayer) return true
                           if (primarySelectedLayer.type !== 'image' && primarySelectedLayer.type !== 'video') return true
                         }
                       }
@@ -7247,6 +7279,18 @@ export function CanvasEditor() {
                                   />
                                 </div>
                               )}
+                              {service.category === "audio" && service.examples?.output && service.examples.output.length > 0 && (() => {
+                                // Audio card preview: a tile naming the format
+                                // (.FLAC / .WAV / …) — no audio fetch or decode;
+                                // playback lives in the Examples page.
+                                const ext = (service.examples.output[0].split('.').pop() || 'audio').toUpperCase()
+                                return (
+                                  <div className="mt-2 w-full aspect-video rounded border bg-muted/30 overflow-hidden flex items-center justify-center gap-3">
+                                    <AudioWaveform className="h-6 w-6 text-[#9fd7ff]/70" />
+                                    <span className="font-mono font-bold tracking-widest text-[#9fd7ff]/80 text-xl">.{ext}</span>
+                                  </div>
+                                )
+                              })()}
                               {service.category === "3d" && service.examples?.input && service.examples.input.length > 0 && (
                                 <div className="mt-2">
                                   <img
@@ -7418,7 +7462,7 @@ export function CanvasEditor() {
                                           e.currentTarget.style.display = "none"
                                         }}
                                       />
-                                    ) : ext === 'mp3' || ext === 'wav' ? (
+                                    ) : ['mp3', 'wav', 'flac', 'ogg', 'm4a', 'aac'].includes(ext || '') ? (
                                       <audio controls src={path} className="w-full" />
                                     ) : ['mp4', 'webm', 'mov', 'avi'].includes(ext || '') ? (
                                       <video controls src={path} className="max-w-full h-auto rounded" />
@@ -7498,7 +7542,7 @@ export function CanvasEditor() {
                                           e.currentTarget.style.display = "none"
                                         }}
                                       />
-                                    ) : ext === 'mp3' || ext === 'wav' ? (
+                                    ) : ['mp3', 'wav', 'flac', 'ogg', 'm4a', 'aac'].includes(ext || '') ? (
                                       <audio controls src={path} className="w-full" />
                                     ) : ['mp4', 'webm', 'mov', 'avi'].includes(ext || '') ? (
                                       <video controls src={path} className="max-w-full h-auto rounded" />

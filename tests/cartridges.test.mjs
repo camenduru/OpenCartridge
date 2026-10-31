@@ -88,6 +88,12 @@ test('frozen v1 catalogs dispatched the old way, without declaring anything', as
     for (const cartridge of parseCatalog(file.text).cartridges) {
       // v1 never declared result types: the URL suffix must still decide.
       assert.equal(cartridge.returns, undefined, `${cartridge.id}: fixture grew a returns block`)
+      // Parameter-only cartridges run from their fields alone — no layer is
+      // selected or uploaded, so they derive no file parameter. yue2 ships
+      // that way (inputTypes: []), and so do the Breeze plain/design cards;
+      // inputTypes entries are layer kinds, so an empty array is the
+      // "no layer input" marker, not ["text"].
+      if (!(cartridge.parameters || []).some((p) => p.type === 'file')) continue
       const kinds = (cartridge.parameters || []).filter((p) => p.type === 'file').length
       assert.ok(kinds > 0, `${cartridge.id}: no file parameter derived from a v1 catalog`)
       const primary = primaryInput(cartridge)

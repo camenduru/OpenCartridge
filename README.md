@@ -67,6 +67,11 @@ container, points it at the built-in MinIO and starts it. No `docker run`, no en
 - **CorridorKey Image** *(image)* — pull a clean alpha matte out of a still frame with CorridorKey 2.0: native-resolution keying, no green screen, no rotoscoping
 - **CorridorKey Video** *(video)* — key a whole clip: drop a video layer and CorridorKey 2.0 returns the animated matte or a transparent cutout at native resolution
 - **Idol 3D** *(3d)* — one image in, a 3D model out: Idol predicts the whole object, including the sides the photo never showed, and the cartridge meshes it into a GLB
+- **YuE2 Text to Music** *(audio)* — generate a complete song — vocals and instruments — from a style description and lyrics, with an optional editable ABC melody plan
+- **Breeze TTS Plain** *(audio)* — text in, one voice take out: the model reads your line in its default voice, bilingual EN/ZH with inline vocal events
+- **Breeze TTS Design** *(audio)* — invent a voice from a written description and have it speak your line
+- **Breeze TTS Clone** *(audio)* — select an audio clip plus its exact transcript; Breeze TTS 2 speaks your line in that voice
+- **Breeze TTS Direct** *(audio)* — keep a reference speaker's identity while steering emotion, pace and delivery with an instruction
 
 | State | Dot | What you can do |
 |---|---|---|
