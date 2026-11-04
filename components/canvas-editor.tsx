@@ -83,15 +83,22 @@ import { ThemeToggle } from "./theme-toggle"
 import { GLBViewerWindow } from "./glb-viewer-window"
 import { WaveformOverlay } from "./waveform-overlay"
 import {
+  declaredInputEntry,
   extensionFor,
+  isMeshInput,
+  isMeshLayer,
   paramControl,
   primaryInput,
+  projectService,
   resultKind,
   visibleCartridges,
 } from "@/lib/cartridge-schema.mjs"
 import { useTheme } from 'next-themes'
 import dynamic from 'next/dynamic'
 import { AutoModel, AutoProcessor, RawImage } from '@huggingface/transformers'
+
+// `declaredInputEntry` / `isMeshInput` live in lib/cartridge-schema.mjs so the
+// binding decision is the same code the test suite exercises.
 
 /**
  * Fallback control for a parameter whose `type` this build does not know.
@@ -158,6 +165,11 @@ const ModelViewer = dynamic(() => import('@google/model-viewer').then(() => {
   ssr: false,
   loading: () => <div className="w-full h-40 bg-muted animate-pulse rounded border flex items-center justify-center text-sm text-muted-foreground">Loading 3D viewer...</div>
 })
+
+// Generated GLBs (SUPRA-Tex, SkinTokens, ...) are authored facing -Z, while
+// model-viewer's default orbit (0deg) looks at the model from +Z — the back.
+// Park the camera on the -Z side so previews and captures show the face.
+const MODEL_FRONT_CAMERA_ORBIT = "180deg 75deg auto"
 
 // Import services from local lib
 import { loadAiServices, getCategoryColor, getCategoryIcon, type AIService } from "@/lib/ai-services"
@@ -231,6 +243,19 @@ interface HistoryState {
   selectedLayerIds: string[] // Changed from selectedLayerId to selectedLayerIds array
 }
 
+/**
+ * The layer kind a cartridge slot binds against; a mesh layer reads as 'glb'.
+ * `isMeshLayer` lives in lib/cartridge-schema.mjs so the test suite exercises
+ * the same predicate the canvas uses.
+ */
+const layerKindOf = (layer: Layer | null | undefined): string | null => {
+  if (!layer) return null
+  if (isMeshLayer(layer)) return 'glb'
+  return layer.type === 'video' || layer.type === 'audio' || layer.type === 'image' || layer.type === 'text'
+    ? layer.type
+    : null
+}
+
 type Tool = "select" | "pan"
 type Handle = "nw" | "ne" | "sw" | "se" | "n" | "e" | "s" | "w" | "rotate" | null
 
@@ -254,7 +279,22 @@ const processErrorMessage = (errorData: any): string => {
       return errorData
     }
   }
-  return errorData?.error || errorData?.message || 'Unknown error'
+  // errorData is an object (e.g. RunPod returns {"error": "..."} or sometimes {})
+  if (errorData && typeof errorData === 'object') {
+    // RunPod error shape: {"error": "message string"} or {"error_type": ..., "error_message": ...}
+    if (errorData.error_message) {
+      console.error('Full error details:', errorData)
+      return `${errorData.error_type?.replace(/<class '(\w+)'>/, '$1') || 'Error'}: ${errorData.error_message}`
+    }
+    const inner = errorData.error
+    if (typeof inner === 'string' && inner) return inner
+    if (inner && typeof inner === 'object' && inner.message) return inner.message
+    if (errorData.message) return errorData.message
+    // Empty object {} or unrecognized shape — log it so the raw data is visible
+    console.error('Unrecognized error shape:', errorData)
+    return 'Unknown error'
+  }
+  return 'Unknown error'
 }
 
 export function CanvasEditor() {
@@ -445,6 +485,8 @@ export function CanvasEditor() {
       modelViewer.style.backgroundColor = 'transparent'
       modelViewer.setAttribute('camera-controls', 'false')
       modelViewer.setAttribute('auto-rotate', 'false')
+      // Thumbnails are the layer's public face: capture the front, not the back.
+      modelViewer.setAttribute('camera-orbit', MODEL_FRONT_CAMERA_ORBIT)
       tempDiv.appendChild(modelViewer)
 
       const cleanup = () => {
@@ -976,37 +1018,11 @@ export function CanvasEditor() {
 
   // Initialize AI services for the local API
   useEffect(() => {
-    const allowedServices = availableServices.map(s => s.id)
-
-    const filteredServices = availableServices
-      .filter(service => allowedServices.includes(service.id))
-      .map(service => ({
-        id: service.id,
-        name: service.name,
-        category: service.category,
-        icon: service.icon,
-        inputTypes: service.inputTypes,
-        parameters: service.parameters,
-        workerId: service.workerId,
-        cost: service.cost,
-        processingTime: service.processingTime,
-        delay: service.delay,
-        divisible: service.divisible,
-        // Worker routing from the registry (worker name + API/upload URLs)
-        worker: service.worker,
-        apiUrl: service.apiUrl,
-        uploadUrl: service.uploadUrl,
-        workerUploadUrl: service.workerUploadUrl,
-        // Initialize parameter values with defaults from defaultValue
-        ...Object.fromEntries(
-          service.parameters.map(param => [
-            param.name,
-            param.defaultValue ?? ''
-          ])
-        )
-      }))
-
-    setAiServices(filteredServices)
+    // projectService keeps every declared field (`inputs` above all) and then
+    // applies the parameter defaults the panel edits. Copying a hand-picked
+    // field list here used to drop `inputs`, which silently unbound declared
+    // input slots such as SkinTokens' `input_mesh`.
+    setAiServices(availableServices.map(projectService))
   }, [availableServices])
 
   // Update service width/height to match selected layer dimensions (only if custom size disabled)
@@ -3614,18 +3630,17 @@ export function CanvasEditor() {
     // v2 cartridges declare which parameter takes the selected layer
     // (`inputs[].bind === 'primary'`). Catalogs written before that have no
     // `inputs` and keep using the magic names above.
-    const selectedKind = primarySelectedLayer?.type === 'video' ? 'video'
-      : primarySelectedLayer?.type === 'audio' ? 'audio'
-      : primarySelectedLayer?.type === 'image' ? 'image'
-      : primarySelectedLayer?.type === 'text' ? 'text' : null
+    const selectedKind = layerKindOf(primarySelectedLayer)
     const declaredInput = primaryInput(service, selectedKind)
+    const inputEntry = declaredInputEntry(service, selectedKind)
+    const requiresMesh = isMeshInput(inputEntry)
 
     // A clip is uploaded as the file itself instead of a canvas still when the
     // input is meant for video: the magic `input_video`, or a declared input
     // that accepts video/*.
     const uploadsVideoFiles = Boolean(inputVideoParam) || Boolean(
-      Array.isArray(declaredInput?.accepts) &&
-      declaredInput.accepts.some((mime: any) => String(mime).startsWith('video'))
+      Array.isArray(inputEntry?.accepts) &&
+      inputEntry.accepts.some((mime: any) => String(mime).startsWith('video'))
     )
   
     let inputLayers: Layer[] = []
@@ -3656,13 +3671,62 @@ export function CanvasEditor() {
       // Service requires 1 layer — unless it declares no file input at all
       // (a text-only service like text-to-music), which runs from its
       // parameters alone and uploads nothing.
-      const takesLayer = Boolean(inputImageParam || inputImage1Param || inputImage2Param || inputImage3Param || inputImageCheckParam || startImageParam || endImageParam || isTextService)
-      if (takesLayer) {
+      const takesLayer = Boolean(inputImageParam || inputImage1Param || inputImage2Param || inputImage3Param || inputImageCheckParam || startImageParam || endImageParam || declaredInput || isTextService)
+      if (requiresMesh) {
+        // A mesh cartridge rigs the 3D layer itself; a still of it is useless.
+        // Leaving `inputLayers` empty (instead of returning here) is what keeps
+        // the required-input guard below reachable, so a wrong or missing
+        // selection gets a reason instead of a silent no-op.
+        if (primarySelectedLayer && isMeshLayer(primarySelectedLayer)) {
+          inputLayers = [primarySelectedLayer]
+        }
+      } else if (takesLayer) {
         if (!primarySelectedLayer) return
         // If service has image input parameters, require image or video layer
         if ((inputImageParam || inputImage1Param || inputImage2Param || inputImage3Param || inputImageCheckParam || startImageParam || endImageParam) &&
             primarySelectedLayer.type !== 'image' && primarySelectedLayer.type !== 'video') return
         inputLayers = [primarySelectedLayer]
+      }
+    }
+
+    // If the service declares a required file input but no matching layer was
+    // selected, bail with an actionable error instead of submitting a job that
+    // will fail on the worker with a missing-input error.
+    if (inputLayers.length === 0 && !isTextService) {
+      const requiredInput = Array.isArray(service.inputs)
+        ? service.inputs.find((e: any) => e.required && e.bind !== 'secondary')
+        : null
+      if (requiredInput) {
+        const accepts = Array.isArray(requiredInput.accepts) ? requiredInput.accepts.map(String) : []
+        const friendly = new Set<string>()
+        for (const mime of accepts) {
+          if (mime === 'glb' || mime.startsWith('model/')) friendly.add('3D')
+          else if (mime.startsWith('video/')) friendly.add('video')
+          else if (mime.startsWith('audio/')) friendly.add('audio')
+          else if (mime.startsWith('image/')) friendly.add('image')
+          else if (mime === 'text' || mime.startsWith('text/')) friendly.add('text')
+        }
+        const kindLabel = friendly.size > 0 ? [...friendly].join(' or ') : 'file'
+        // Say what was actually selected: a rejection that names only the
+        // requirement leaves the user staring at a layer that looks right.
+        const sawSelection = selectedLayers.length === 0
+          ? 'nothing is selected'
+          : `${selectedLayers.length} selected (${selectedLayers.map(layer => isMeshLayer(layer) ? '3D' : layer.type).join(', ')})`
+        const message = `Select a ${kindLabel} layer to run this cartridge — ${sawSelection}`
+        const noInputJob: ServiceJob = {
+          id: generateJobId(),
+          serviceId: service.id,
+          serviceName: service.name,
+          progress: 100,
+          status: `Error: ${message}`,
+          apiStatus: "FAILED",
+          result: { error: true, message },
+          timing: null,
+          options: null,
+          polling: false,
+        }
+        setServiceJobs(prev => [...prev, noInputJob])
+        return
       }
     }
 
@@ -3784,6 +3848,13 @@ export function CanvasEditor() {
                 // what a clip cartridge is for.
                 const videoResponse = await fetch(layer.videoUrl)
                 blob = await videoResponse.blob()
+              } else if (isMeshLayer(layer) && layer.glbUrl) {
+                // The mesh is the input, not a render of it. Mesh layers are
+                // painted as overlays or thumbnails, so a canvas capture would
+                // be a picture of a model, not the model.
+                const meshResponse = await fetch(layer.glbUrl)
+                if (!meshResponse.ok) throw new Error(`Could not fetch the selected 3D layer (${meshResponse.status})`)
+                blob = new Blob([await meshResponse.arrayBuffer()], { type: 'model/gltf-binary' })
               } else if (layer.type === 'audio' && layer.audioUrl) {
                 // For audio layers, fetch the audio blob directly
                 const response = await fetch(layer.audioUrl)
@@ -3798,7 +3869,9 @@ export function CanvasEditor() {
               // object URL handed to the worker uses the worker's own view of
               // that MinIO so it can download the input from inside its container.
               const formData = new FormData()
-              const ext = layer.type === 'audio' ? 'mp3' : (uploadsVideoFiles && layer.type === 'video' ? 'mp4' : 'png')
+              const ext = layer.type === 'audio' ? 'mp3'
+                : isMeshLayer(layer) ? 'glb'
+                : (uploadsVideoFiles && layer.type === 'video' ? 'mp4' : 'png')
               formData.append('file', blob, `selected-layer-${i + 1}.${ext}`)
               formData.append('localUploadUrl', service.uploadUrl)
               if (service.workerUploadUrl) {
@@ -5830,6 +5903,21 @@ export function CanvasEditor() {
                           </div>
                         )
                       }
+                    } else if (isMeshInput(primaryInput(selectedService, layerKindOf(primarySelectedLayer)))) {
+                      // Mesh cartridge: it rigs the selected 3D layer itself
+                      if (!primarySelectedLayer) {
+                        return (
+                          <div className="text-xs text-green-600 text-center mb-3">
+                            1 3D layer required for this service
+                          </div>
+                        )
+                      } else if (primarySelectedLayer.type !== 'glb') {
+                        return (
+                          <div className="text-xs text-green-600 text-center mb-3">
+                            Selected layer must be a 3D layer for this service
+                          </div>
+                        )
+                      }
                     } else if (inputImageParam || inputImage1Param || inputImageCheckParam || inputTypes) {
                       // Service requires 1 layer
                       if (!primarySelectedLayer) {
@@ -5882,6 +5970,11 @@ export function CanvasEditor() {
                       } else if ((inputImage1Param && inputImage2Param) || (startImageParam && endImageParam)) {
                         if (selectedLayers.length !== 2 || !selectedLayers.every(layer => layer.type === 'image' || layer.type === 'video')) return true
                       } else {
+                        // Mesh cartridges bind the selected 3D layer, which a
+                        // canvas still could never stand in for.
+                        if (isMeshInput(primaryInput(selectedService, layerKindOf(primarySelectedLayer)))) {
+                          if (!isMeshLayer(primarySelectedLayer)) return true
+                        } else {
                         // For other services, need at least one selected layer —
                         // except services that declare no file input at all
                         // (text-only, e.g. text-to-music), which run from
@@ -5890,6 +5983,7 @@ export function CanvasEditor() {
                         if (takesLayer) {
                           if (!primarySelectedLayer) return true
                           if (primarySelectedLayer.type !== 'image' && primarySelectedLayer.type !== 'video') return true
+                        }
                         }
                       }
 
@@ -7472,6 +7566,7 @@ export function CanvasEditor() {
                                         alt={`Input ${index + 1}`}
                                         camera-controls
                                         auto-rotate
+                                        camera-orbit={MODEL_FRONT_CAMERA_ORBIT}
                                         debug
                                         style={{ width: "100%", height: "600px" }}
                                       >
@@ -7552,6 +7647,7 @@ export function CanvasEditor() {
                                         alt={`Output ${index + 1}`}
                                         camera-controls
                                         auto-rotate
+                                        camera-orbit={MODEL_FRONT_CAMERA_ORBIT}
                                         style={{ width: "100%", height: "600px" }}
                                       />
                                     ) : ext === 'txt' ? (

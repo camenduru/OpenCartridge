@@ -1,0 +1,118 @@
+[
+  {
+    "home": true,
+    "id": "skintokens",
+    "name": "SkinTokens Rig",
+    "description": "One mesh in, a rigged mesh out: TokenRig predicts a skeleton and per-vertex skin weights in a single autoregressive sequence and returns the GLB, ready to pose in Blender, Unity or three.js.",
+    "category": "3d",
+    "icon": "Box",
+    "inputTypes": [
+      "file"
+    ],
+    "workerId": "",
+    "cost": "0",
+    "processingTime": "120",
+    "delay": "12000",
+    "overview": "SkinTokens compresses skinning weights into a compact discrete vocabulary (an FSQ-CVAE), so a Qwen3-0.6B backbone can emit the whole rig — bone hierarchy followed by skin tokens — as one interleaved sequence instead of predicting bones and weights in separate stages. This cartridge takes a single unrigged mesh, runs the released GRPO-refined TokenRig checkpoint, and hands the predicted skeleton and dense skin weights to Blender, which writes them back onto your original mesh. With Keep Original Material on, the returned GLB keeps the input's textures and scale, so it looks unchanged until you pose it. Drop a GLB on the canvas, select that 3D layer, then Run — the mesh is uploaded for you.",
+    "divisible": 32,
+    "inputs": [
+      {
+        "name": "input_mesh",
+        "accepts": [
+          "glb",
+          "model/gltf-binary"
+        ],
+        "bind": "primary",
+        "required": true
+      }
+    ],
+    "returns": {
+      "type": "model/gltf-binary",
+      "ext": "glb",
+      "layer": "3d"
+    },
+    "examples": {
+      "input": [
+        "http://localhost:9000/tost/examples/giraffe.glb"
+      ],
+      "output": [
+        "http://localhost:9000/tost/examples/giraffe-rigged.glb"
+      ]
+    },
+    "parameters": [
+      {
+        "name": "job_id",
+        "type": "string",
+        "label": "Job ID",
+        "required": false,
+        "defaultValue": "",
+        "ui": false
+      },
+      {
+        "name": "input_mesh",
+        "type": "file",
+        "label": "Input Mesh",
+        "required": true,
+        "ui": false,
+        "description": "The selected 3D layer is uploaded here automatically."
+      },
+      {
+        "name": "use_transfer",
+        "type": "boolean",
+        "label": "Keep Original Material",
+        "defaultValue": true,
+        "ui": true,
+        "description": "Rig the original mesh in place, keeping its textures and scale, instead of exporting a bare rigged copy."
+      },
+      {
+        "name": "use_postprocess",
+        "type": "boolean",
+        "label": "Voxel Skin Postprocess",
+        "defaultValue": false,
+        "ui": true
+      },
+      {
+        "name": "use_skeleton",
+        "type": "boolean",
+        "label": "Keep Existing Skeleton",
+        "defaultValue": false,
+        "ui": false
+      },
+      {
+        "name": "num_beams",
+        "type": "number",
+        "label": "Beams",
+        "defaultValue": 10,
+        "ui": false
+      },
+      {
+        "name": "top_k",
+        "type": "number",
+        "label": "Top K",
+        "defaultValue": 5,
+        "ui": false
+      },
+      {
+        "name": "top_p",
+        "type": "number",
+        "label": "Top P",
+        "defaultValue": 0.95,
+        "ui": false
+      },
+      {
+        "name": "temperature",
+        "type": "number",
+        "label": "Temperature",
+        "defaultValue": 1.0,
+        "ui": false
+      },
+      {
+        "name": "repetition_penalty",
+        "type": "number",
+        "label": "Repetition Penalty",
+        "defaultValue": 2.0,
+        "ui": false
+      }
+    ]
+  }
+]

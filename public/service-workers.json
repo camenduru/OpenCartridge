@@ -167,5 +167,53 @@
         "s3_bucket_folder": "output"
       }
     }
+  },
+  {
+    "id": "supra-tex",
+    "name": "SUPRA-Tex",
+    "catalog": "services/supra-tex.json",
+    "apiUrl": "http://host.docker.internal:8007",
+    "uploadUrl": "http://localhost:9000",
+    "workerUploadUrl": "http://host.docker.internal:9000",
+    "container": {
+      "name": "supra-tex",
+      "image": "camenduru/supra-tex:latest",
+      "port": 8007,
+      "hostPort": 8007,
+      "gpus": true,
+      "command": ["python", "/content/worker_runpod.py", "--rp_serve_api", "--rp_api_port", "8007", "--rp_api_host", "0.0.0.0", "--rp_log_level", "INFO"],
+      "env": {
+        "s3_access_key_id": "${s3_access_key_id}",
+        "s3_secret_access_key": "${s3_secret_access_key}",
+        "s3_endpoint_url": "http://host.docker.internal:9000",
+        "s3_region_name": "us-east-1",
+        "s3_bucket_name": "tost",
+        "s3_bucket_folder": "output"
+      }
+    }
+  },
+  {
+    "id": "skintokens",
+    "name": "SkinTokens",
+    "catalog": "services/skintokens.json",
+    "apiUrl": "http://host.docker.internal:8008",
+    "uploadUrl": "http://localhost:9000",
+    "workerUploadUrl": "http://host.docker.internal:9000",
+    "container": {
+      "name": "skintokens",
+      "image": "camenduru/skintokens:latest",
+      "port": 8008,
+      "hostPort": 8008,
+      "gpus": true,
+      "command": ["python", "/content/worker_runpod.py", "--rp_serve_api", "--rp_api_port", "8008", "--rp_api_host", "0.0.0.0", "--rp_log_level", "INFO"],
+      "env": {
+        "s3_access_key_id": "${s3_access_key_id}",
+        "s3_secret_access_key": "${s3_secret_access_key}",
+        "s3_endpoint_url": "http://host.docker.internal:9000",
+        "s3_region_name": "us-east-1",
+        "s3_bucket_name": "tost",
+        "s3_bucket_folder": "output"
+      }
+    }
   }
 ]

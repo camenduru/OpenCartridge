@@ -1,5 +1,6 @@
 node_modules
 .next
 .git
+.env.local
 docker/data
 tests/fixtures

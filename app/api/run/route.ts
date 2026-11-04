@@ -5,6 +5,10 @@ export async function POST(request: NextRequest) {
   try {
     const { serviceId, payload, localApiUrl } = await request.json()
 
+    // One line per dispatch, keys only: what the worker is actually handed. A
+    // declared input missing from this list is a dispatch bug, not a worker bug.
+    console.log('[run]', serviceId, 'input keys:', Object.keys(payload?.input ?? {}))
+
     // Stale pages (loaded before the worker registry existed) send no URL or
     // the literal string "undefined" — answer with an actionable message
     // instead of a cryptic connection failure.

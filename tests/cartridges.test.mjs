@@ -23,8 +23,11 @@ import {
   CAPABILITIES,
   LAYER_KINDS,
   PARAM_CONTROLS,
+  declaredInputEntry,
   extensionFor,
   extensionOf,
+  isMeshInput,
+  isMeshLayer,
   kindFromUrl,
   missingCapabilities,
   normalizeCatalog,
@@ -32,6 +35,7 @@ import {
   paramControl,
   parseCatalog,
   primaryInput,
+  projectService,
   resultKind,
   schemaVersionOf,
   visibleCartridges,
@@ -236,6 +240,70 @@ test('declared inputs bind, magic names still work for v1', () => {
   })
   assert.equal(primaryInput(legacy, 'video')?.name, 'input_video')
   assert.equal(primaryInput(legacy, 'image')?.name, 'input_image')
+})
+
+test('a declared mesh slot is read from the input entry, not the parameter', async () => {
+  const text = await fs.readFile(path.join(shipped, 'skintokens.json'), 'utf8')
+  const [skintokens] = parseCatalog(text).cartridges
+  assert.ok(skintokens, 'the skintokens catalog did not parse')
+
+  const entry = declaredInputEntry(skintokens, 'glb')
+  assert.equal(entry?.name, 'input_mesh', 'the mesh slot must be the primary input')
+  assert.equal(isMeshInput(entry), true, 'glb / model+gltf-binary must read as a mesh slot')
+
+  // The regression this guards. `primaryInput` returns the PARAMETER, which has
+  // no `accepts`; asking *it* whether the slot takes a mesh silently answers
+  // "no", which skipped the mesh branch and dispatched a job carrying no
+  // input_mesh at all — the worker then failed with "input_mesh is required".
+  const parameter = primaryInput(skintokens, 'glb')
+  assert.equal(parameter?.name, 'input_mesh')
+  assert.equal(parameter?.accepts, undefined, 'parameters must not carry accepts')
+  assert.equal(isMeshInput(parameter), false, 'a parameter is not a mesh slot — read the entry')
+
+  // An image on a mesh-only cartridge still resolves to the mesh slot, so the
+  // UI can refuse it rather than uploading a PNG into a GLB slot.
+  const asImage = declaredInputEntry(skintokens, 'image')
+  assert.equal(asImage?.name, 'input_mesh')
+  assert.equal(isMeshInput(asImage), true)
+})
+
+test('a v1 catalog derived from file parameters is not a mesh slot', () => {
+  const legacy = normalizeService({ ...minimal, parameters: [{ name: 'input_image', type: 'file' }] })
+  const entry = declaredInputEntry(legacy, 'image')
+  assert.equal(entry?.name, 'input_image')
+  assert.equal(isMeshInput(entry), false)
+})
+
+test('the dispatched service keeps its declared inputs', async () => {
+  const text = await fs.readFile(path.join(shipped, 'skintokens.json'), 'utf8')
+  const [catalog] = parseCatalog(text).cartridges
+  const dispatched = projectService(catalog)
+
+  // The bug this guards: the canvas used to rebuild each service from a
+  // hand-picked field list, and `inputs` was not on it. With `inputs` gone the
+  // declared slot vanished, `primaryInput` fell back to the v1 magic names,
+  // `input_mesh` is not one of them, and the job went out with no file at all.
+  assert.ok(Array.isArray(dispatched.inputs), 'projection dropped `inputs`')
+  assert.equal(dispatched.inputs.length, 1)
+  assert.equal(declaredInputEntry(dispatched, 'glb')?.name, 'input_mesh')
+  assert.equal(isMeshInput(declaredInputEntry(dispatched, 'glb')), true)
+  assert.equal(primaryInput(dispatched, 'glb')?.name, 'input_mesh')
+
+  // Flattened defaults still land on the object the panel edits.
+  assert.equal(dispatched.input_mesh, '', 'parameter default must be flattened')
+  assert.equal(dispatched.use_transfer, true)
+})
+
+test('a 3D result layer counts as a mesh layer even though it is stored as an image', () => {
+  // Dropped GLB.
+  assert.equal(isMeshLayer({ type: 'glb', glbUrl: 'blob:http://localhost/1' }), true)
+  // 3D result: an image thumbnail that carries the mesh URL.
+  assert.equal(isMeshLayer({ type: 'image', isGlbThumbnail: true, glbUrl: '/api/image-proxy?url=x.glb' }), true)
+  // A plain image is not a mesh.
+  assert.equal(isMeshLayer({ type: 'image', image: {} }), false)
+  assert.equal(isMeshLayer({ type: 'video', videoUrl: 'x.mp4' }), false)
+  assert.equal(isMeshLayer(null), false)
+  assert.equal(isMeshLayer(undefined), false)
 })
 
 test('capabilities are advisory: missing ones are reported, not fatal', () => {

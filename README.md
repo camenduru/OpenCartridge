@@ -19,7 +19,7 @@ https://github.com/user-attachments/assets/4c323c93-db7b-40b9-a6d3-7b48e577aef1
 - 🎨 **Canvas** — layers, transforms, undo/redo, export (PNG, MP4, WebM, GLB)
 - 💾 **Cartridges** — worker models packaged as one-click cartridges, installed and run from the UI
 - 🐳 **Docker cartridges** — download and run with one click; start, stop and delete the container from the same card
-- 🧊 **3D** — GLB preview and orbiting viewer
+- 🧊 **3D** — GLB preview and orbiting viewer; thumbnails, examples and the floating viewer open front-first, so generated models never greet you with their back
 - 🎵 **Audio** — waveform overlay and generation cartridges
 - 🗄️ **MinIO inside** — the container ships its own object storage; nothing else to install
 - 🔄 **Self-updating UI** — the Global Configuration panel pulls the latest source, rebuilds and restarts the app from inside itself
@@ -32,7 +32,11 @@ https://github.com/user-attachments/assets/4c323c93-db7b-40b9-a6d3-7b48e577aef1
 **2. Start OpenCartridge**
 
 ```powershell
+# Linux / macOS
 docker run -d --name opencartridge --restart unless-stopped --add-host=host.docker.internal:host-gateway -p 3000:3000 -p 9000:9000 -p 9001:9001 -v opencartridge-data:/content/data -v /var/run/docker.sock:/var/run/docker.sock camenduru/opencartridge
+
+# Docker Desktop for Windows — note the doubled leading slash on the socket
+docker run -d --name opencartridge --restart unless-stopped --add-host=host.docker.internal:host-gateway -p 3000:3000 -p 9000:9000 -p 9001:9001 -v opencartridge-data:/content/data -v //var/run/docker.sock:/var/run/docker.sock camenduru/opencartridge
 ```
 
 Open **http://localhost:3000**. That is the whole setup — no worker containers to start by hand.
@@ -46,8 +50,7 @@ never reach them: every cartridge sits on **Starting…** forever and every job 
 `-v opencartridge-data:/content/data` is the MinIO storage: generated renders and uploaded inputs live there, so they
 survive recreating the container. `docker volume rm opencartridge-data` clears them.
 
-`-v /var/run/docker.sock:/var/run/docker.sock` gives the app its container controls; on Docker Desktop for Windows
-write it as `-v //var/run/docker.sock:/var/run/docker.sock`.
+The Docker socket mount gives the app its container controls (pulling, starting and deleting workers).
 
 Reaching it from another machine on your network works as-is: `http://<host-ip>:3000`. The browser only ever talks to
 the app's own origin — worker calls, uploads and result files are all proxied server-side — so no `localhost` or
@@ -67,6 +70,8 @@ container, points it at the built-in MinIO and starts it. No `docker run`, no en
 - **CorridorKey Image** *(image)* — pull a clean alpha matte out of a still frame with CorridorKey 2.0: native-resolution keying, no green screen, no rotoscoping
 - **CorridorKey Video** *(video)* — key a whole clip: drop a video layer and CorridorKey 2.0 returns the animated matte or a transparent cutout at native resolution
 - **Idol 3D** *(3d)* — one image in, a 3D model out: Idol predicts the whole object, including the sides the photo never showed, and the cartridge meshes it into a GLB
+- **SUPRA-Tex** *(3d)* — one photo in, a textured 3D model out: reconstructs the object's geometry from a single view and super-aligns a full PBR material onto it, returning a GLB
+- **SkinTokens Rig** *(3d)* — one mesh in, a rigged mesh out: TokenRig predicts a skeleton and per-vertex skin weights and returns the rigged GLB, ready to pose in Blender, Unity or three.js
 - **YuE2 Text to Music** *(audio)* — generate a complete song — vocals and instruments — from a style description and lyrics, with an optional editable ABC melody plan
 - **Breeze TTS Plain** *(audio)* — text in, one voice take out: the model reads your line in its default voice, bilingual EN/ZH with inline vocal events
 - **Breeze TTS Design** *(audio)* — invent a voice from a written description and have it speak your line

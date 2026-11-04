@@ -3,7 +3,20 @@
 import React, { useRef, useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { Button } from '@/components/ui/button'
-import { X, Minus, Maximize2, Camera } from 'lucide-react'
+import { X, Minus, Maximize2, Camera, Bone } from 'lucide-react'
+import type { GLBRigCanvasHandle, RigStatus } from './glb-rig-canvas'
+
+// three.js is client-only (it touches `window` when a renderer is constructed),
+// so the rig canvas never participates in the server render.
+const RigCanvas = dynamic(
+  () => import('./glb-rig-canvas').then((mod) => mod.GLBRigCanvas),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center h-full text-sm text-muted-foreground">Loading rig viewer…</div>
+    ),
+  }
+) as any
 
 // Dynamically import model-viewer to avoid SSR issues
 const ModelViewer = dynamic(() => import('@google/model-viewer').then(() => {
@@ -16,6 +29,10 @@ const ModelViewer = dynamic(() => import('@google/model-viewer').then(() => {
   ssr: false,
   loading: () => <div className="flex items-center justify-center h-full text-sm text-muted-foreground">Loading 3D viewer...</div>
 })
+
+// Generated GLBs face -Z; model-viewer's default orbit looks from +Z, at the
+// back. Start on the -Z side so the model opens front-first.
+const MODEL_FRONT_CAMERA_ORBIT = "180deg 75deg auto"
 
 interface GLBViewerWindowProps {
   glbUrl: string
@@ -35,6 +52,12 @@ export function GLBViewerWindow({
   initialSize = { width: 600, height: 500 }
 }: GLBViewerWindowProps) {
   const viewerRef = useRef<any>(null)
+  const rigRef = useRef<GLBRigCanvasHandle | null>(null)
+
+  // Bone overlay: off by default — the shaded model is what most people want,
+  // and the rig view swaps the renderer rather than layering over it.
+  const [showBones, setShowBones] = useState(false)
+  const [rigStatus, setRigStatus] = useState<RigStatus | null>(null)
 
   // Window state
   const [position, setPosition] = useState(initialPosition)
@@ -165,7 +188,17 @@ export function GLBViewerWindow({
   }
 
   const handleCapture = async () => {
-    if (!viewerRef.current || !onCapture) return
+    if (!onCapture) return
+
+    // The rig view is our own WebGL canvas — model-viewer's toBlob does not
+    // exist here, so read the renderer's buffer instead.
+    if (showBones) {
+      const dataUrl = rigRef.current?.capture()
+      if (dataUrl) onCapture(dataUrl)
+      return
+    }
+
+    if (!viewerRef.current) return
 
     try {
       // Use model-viewer's toBlob method to capture with transparency
@@ -228,6 +261,16 @@ export function GLBViewerWindow({
       >
         <span className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{title}</span>
         <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowBones((value) => !value)}
+            className={`h-6 w-6 p-0 ${showBones ? 'bg-primary/15 text-primary' : ''}`}
+            title={showBones ? 'Hide bones' : 'Show bones'}
+            aria-pressed={showBones}
+          >
+            <Bone className="h-3 w-3" />
+          </Button>
           {onCapture && (
             <Button
               variant="ghost"
@@ -255,28 +298,44 @@ export function GLBViewerWindow({
       {!isMinimized && (
         <>
           <div className="flex-1 relative" style={{ height: `${size.height - 40}px` }}>
-            <ModelViewer
-              ref={viewerRef}
-              src={glbUrl}
-              alt="3D Model"
-              camera-controls
-              auto-rotate
-              style={{
-                width: '100%',
-                height: '100%',
-                backgroundColor: 'transparent'
-              }}
-              onError={(e: Event) => {
-                console.error('Model viewer error:', e)
-                setError('Failed to load GLB file')
-              }}
-            >
-              {isLoading && (
-                <div slot="progress-bar" className="w-full h-1 bg-muted rounded">
-                  <div className="h-full bg-primary rounded animate-pulse"></div>
-                </div>
-              )}
-            </ModelViewer>
+            {showBones ? (
+              <RigCanvas ref={rigRef} glbUrl={glbUrl} onStatus={setRigStatus} />
+            ) : (
+              <ModelViewer
+                ref={viewerRef}
+                src={glbUrl}
+                alt="3D Model"
+                camera-controls
+                auto-rotate
+                camera-orbit={MODEL_FRONT_CAMERA_ORBIT}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  backgroundColor: 'transparent'
+                }}
+                onError={(e: Event) => {
+                  console.error('Model viewer error:', e)
+                  setError('Failed to load GLB file')
+                }}
+              >
+                {isLoading && (
+                  <div slot="progress-bar" className="w-full h-1 bg-muted rounded">
+                    <div className="h-full bg-primary rounded animate-pulse"></div>
+                  </div>
+                )}
+              </ModelViewer>
+            )}
+
+            {/* What the rig view found — a rigged GLB that came back without
+                bones looks identical to a rigged one until you ask. */}
+            {showBones && rigStatus && (
+              <div className="pointer-events-none absolute bottom-1 left-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] leading-tight text-white">
+                {rigStatus.state === 'loading' && 'Loading rig…'}
+                {rigStatus.state === 'error' && (rigStatus.message || 'Could not load the model')}
+                {rigStatus.state === 'no-rig' && 'No skeleton in this model'}
+                {rigStatus.state === 'ready' && `${rigStatus.bones} bones`}
+              </div>
+            )}
           </div>
 
           {/* Resize Handle */}

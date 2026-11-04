@@ -26,17 +26,24 @@ test('the registry URL is tried first', async () => {
 
 test('the alias gets a loopback twin', async () => {
   const candidates = await workerUrlCandidates('http://host.docker.internal:8003')
-  assert.ok(candidates.includes('http://127.0.0.1:8003/'))
+  // No trailing slash: `${candidate}/run` must not become `//run`.
+  assert.ok(candidates.includes('http://127.0.0.1:8003'))
 })
 
 test('loopback gets the alias twin', async () => {
   const candidates = await workerUrlCandidates('http://127.0.0.1:8000')
-  assert.ok(candidates.includes('http://host.docker.internal:8000/'))
+  assert.ok(candidates.includes('http://host.docker.internal:8000'))
 })
 
 test('localhost counts as loopback', async () => {
   const candidates = await workerUrlCandidates('http://localhost:8000')
-  assert.ok(candidates.includes('http://host.docker.internal:8000/'))
+  assert.ok(candidates.includes('http://host.docker.internal:8000'))
+})
+
+test('a trailing slash on the registry URL is removed', async () => {
+  const candidates = await workerUrlCandidates('http://127.0.0.1:8000/')
+  assert.deepEqual(candidates[0], 'http://127.0.0.1:8000')
+  assert.ok(candidates.includes('http://host.docker.internal:8000'))
 })
 
 test('no candidate is offered twice', async () => {
