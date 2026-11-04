@@ -31,11 +31,15 @@ https://github.com/user-attachments/assets/4c323c93-db7b-40b9-a6d3-7b48e577aef1
 
 **2. Start OpenCartridge**
 
-```powershell
-# Linux / macOS
-docker run -d --name opencartridge --restart unless-stopped --add-host=host.docker.internal:host-gateway -p 3000:3000 -p 9000:9000 -p 9001:9001 -v opencartridge-data:/content/data -v /var/run/docker.sock:/var/run/docker.sock camenduru/opencartridge
+**Linux / macOS**
 
-# Docker Desktop for Windows — note the doubled leading slash on the socket
+```bash
+docker run -d --name opencartridge --restart unless-stopped --add-host=host.docker.internal:host-gateway -p 3000:3000 -p 9000:9000 -p 9001:9001 -v opencartridge-data:/content/data -v /var/run/docker.sock:/var/run/docker.sock camenduru/opencartridge
+```
+
+**Docker Desktop for Windows** — note the doubled leading slash on the socket
+
+```powershell
 docker run -d --name opencartridge --restart unless-stopped --add-host=host.docker.internal:host-gateway -p 3000:3000 -p 9000:9000 -p 9001:9001 -v opencartridge-data:/content/data -v //var/run/docker.sock:/var/run/docker.sock camenduru/opencartridge
 ```
 
