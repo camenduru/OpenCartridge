@@ -34,7 +34,9 @@
       "input": [
         "https://huggingface.co/spaces/UniLat3D/Supra-Tex/resolve/main/assets/spiny_whelk_shell.png"
       ],
-      "output": []
+      "output": [
+        "https://huggingface.co/camenduru/glb/resolve/main/supra-tex-2d989c1a24abd55a4dc1c2401840d1eb.glb-OpenCartridge-1793758087420.glb"
+      ]
     },
     "parameters": [
       {

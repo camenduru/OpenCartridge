@@ -33,10 +33,10 @@
     },
     "examples": {
       "input": [
-        "http://localhost:9000/tost/examples/giraffe.glb"
+        "https://examples.tost.ai/ijofewhou4389r.png"
       ],
       "output": [
-        "http://localhost:9000/tost/examples/giraffe-rigged.glb"
+        "https://examples.tost.ai/ijofewhou4389rr.png"
       ]
     },
     "parameters": [
