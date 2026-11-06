@@ -330,6 +330,7 @@ export function GLBViewerWindow({
               <VRMViewer
                 ref={vrmRef}
                 url={glbUrl}
+                vrma={isVrma}
                 style={{ width: '100%', height: '100%' }}
               />
             ) : (

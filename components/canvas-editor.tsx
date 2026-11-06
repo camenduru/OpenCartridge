@@ -522,6 +522,13 @@ export function CanvasEditor() {
     return renderVrmThumbnail(vrmUrl)
   }, [])
 
+  // A .vrma has no mesh for model-viewer to show, so its thumbnail is the
+  // skeleton the viewer draws, rendered the same way on an offscreen canvas.
+  const generateVRMAThumbnail = useCallback(async (vrmaUrl: string): Promise<HTMLImageElement> => {
+    const { renderVrmaThumbnail } = await import('@/lib/vrma-thumbnail')
+    return renderVrmaThumbnail(vrmaUrl)
+  }, [])
+
   // Function to generate GLB thumbnail
   const generateGLBThumbnail = useCallback(async (glbUrl: string): Promise<HTMLImageElement> => {
     return new Promise((resolve, reject) => {
@@ -612,7 +619,9 @@ export function CanvasEditor() {
         try {
           const thumbnail = isVrmAsset(layer.glbUrl, layer.name)
             ? await generateVRMThumbnail(layer.glbUrl!)
-            : await generateGLBThumbnail(layer.glbUrl!)
+            : isVrmaAsset(layer.glbUrl, layer.name)
+              ? await generateVRMAThumbnail(layer.glbUrl!)
+              : await generateGLBThumbnail(layer.glbUrl!)
           const croppedThumbnail = await cropTransparent(thumbnail)
           // Create a new image layer for the thumbnail
           const thumbnailLayer: Layer = {
@@ -662,7 +671,7 @@ export function CanvasEditor() {
     }
 
     generateThumbnails()
-  }, [layers, generateGLBThumbnail, generateVRMThumbnail])
+  }, [layers, generateGLBThumbnail, generateVRMThumbnail, generateVRMAThumbnail])
 
   // Cartridge Properties resize functionality
   const [servicePropertiesHeight, setServicePropertiesHeight] = useState(128) // Default height in pixels
@@ -1540,7 +1549,7 @@ export function CanvasEditor() {
       const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'))
       const videoFiles = Array.from(files).filter(file => file.type.startsWith('video/'))
       const audioFiles = Array.from(files).filter(file => file.type.startsWith('audio/'))
-      const glbFiles = Array.from(files).filter(file => file.name.toLowerCase().endsWith('.glb') || file.name.toLowerCase().endsWith('.gltf') || file.name.toLowerCase().endsWith('.vrm'))
+      const glbFiles = Array.from(files).filter(file => file.name.toLowerCase().endsWith('.glb') || file.name.toLowerCase().endsWith('.gltf') || file.name.toLowerCase().endsWith('.vrm') || file.name.toLowerCase().endsWith('.vrma'))
 
      // Handle video files
      if (videoFiles.length > 0) {
@@ -1741,7 +1750,9 @@ export function CanvasEditor() {
          try {
            const thumbnail = file.name.toLowerCase().endsWith('.vrm')
             ? await generateVRMThumbnail(glbUrl)
-            : await generateGLBThumbnail(glbUrl)
+            : file.name.toLowerCase().endsWith('.vrma')
+              ? await generateVRMAThumbnail(glbUrl)
+              : await generateGLBThumbnail(glbUrl)
            const croppedThumbnail = await cropTransparent(thumbnail)
 
            // Calculate dimensions maintaining aspect ratio, with max dimension if enabled
@@ -1964,7 +1975,7 @@ export function CanvasEditor() {
     const imageFiles = allFiles.filter((file) => file.type.startsWith("image/"))
     const videoFiles = allFiles.filter((file) => file.type.startsWith("video/"))
     const audioFiles = allFiles.filter((file) => file.type.startsWith("audio/"))
-    const glbFiles = allFiles.filter((file) => file.name.toLowerCase().endsWith('.glb') || file.name.toLowerCase().endsWith('.gltf') || file.name.toLowerCase().endsWith('.vrm'))
+    const glbFiles = allFiles.filter((file) => file.name.toLowerCase().endsWith('.glb') || file.name.toLowerCase().endsWith('.gltf') || file.name.toLowerCase().endsWith('.vrm') || file.name.toLowerCase().endsWith('.vrma'))
 
     // Handle video files
     if (videoFiles.length > 0) {
@@ -2361,7 +2372,9 @@ export function CanvasEditor() {
         try {
           const thumbnail = file.name.toLowerCase().endsWith('.vrm')
             ? await generateVRMThumbnail(glbUrl)
-            : await generateGLBThumbnail(glbUrl)
+            : file.name.toLowerCase().endsWith('.vrma')
+              ? await generateVRMAThumbnail(glbUrl)
+              : await generateGLBThumbnail(glbUrl)
           const croppedThumbnail = await cropTransparent(thumbnail)
 
           // Calculate dimensions maintaining aspect ratio, with max dimension if enabled
@@ -4498,7 +4511,9 @@ export function CanvasEditor() {
         // Generate a thumbnail for the 3D result (VRM avatars need three-vrm)
         const makeThumb = isVrmAsset(glbUrl, resultUrl)
           ? generateVRMThumbnail(glbUrl)
-          : generateGLBThumbnail(glbUrl)
+          : isVrmaAsset(glbUrl, resultUrl)
+            ? generateVRMAThumbnail(glbUrl)
+            : generateGLBThumbnail(glbUrl)
         makeThumb.then(async thumbnail => {
           const croppedThumbnail = await cropTransparent(thumbnail)
 
@@ -5427,7 +5442,7 @@ export function CanvasEditor() {
             <input
               ref={layerInputRef}
               type="file"
-              accept="image/*,video/*,audio/*,.glb,.gltf,.vrm"
+              accept="image/*,video/*,audio/*,.glb,.gltf,.vrm,.vrma"
               multiple
               onChange={handleLayerUpload}
               className="hidden"

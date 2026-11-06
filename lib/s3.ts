@@ -19,7 +19,7 @@ export function getFileType(key: string): string {
   const videoExts = ['mp4', 'webm', 'ogg', 'mov', 'avi', 'mkv', 'flv', 'wmv', 'm3u8']
   const audioExts = ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a', 'wma', 'opus']
   const docExts = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'json', 'xml', 'html', 'htm', 'md']
-  const model3dExts = ['glb', 'gltf', 'fbx', 'obj', 'dae', '3ds', 'ply']
+  const model3dExts = ['glb', 'gltf', 'vrm', 'vrma', 'fbx', 'obj', 'dae', '3ds', 'ply']
 
   if (imageExts.includes(ext)) return 'image'
   if (videoExts.includes(ext)) return 'video'
