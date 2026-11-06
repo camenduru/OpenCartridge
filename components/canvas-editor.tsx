@@ -338,6 +338,16 @@ function isVrmAsset(url?: string, name?: string) {
       /\.vrm$/i.test((name || '').replace(' Thumbnail', '').trim()))
 }
 
+/**
+ * A .vrma is a VRM Animation: a glTF binary with no mesh that plays on an
+ * avatar. It keeps its own container when exported, so never call it a GLB.
+ */
+function isVrmaAsset(url?: string, name?: string) {
+  return Boolean(url) &&
+    (/\.vrma(\?|#|$)/i.test(url as string) ||
+      /\.vrma$/i.test((name || '').replace(' Thumbnail', '').trim()))
+}
+
 export function CanvasEditor() {
   const { resolvedTheme } = useTheme()
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -3227,10 +3237,11 @@ export function CanvasEditor() {
       }
 
       if (layer.type === 'glb' && layer.glbUrl) {
-        // Keep the avatar's real container: VRM layers must download as .vrm,
-        // not be re-labelled as GLB.
+        // Keep the asset's real container: VRM avatars download as .vrm, VRM
+        // animations as .vrma, and only meshes are re-labelled as GLB.
+        const vrma = isVrmaAsset(layer.glbUrl, layer.name)
         const vrm = isVrmAsset(layer.glbUrl, layer.name)
-        void downloadLayerFile(layer.glbUrl, baseName, vrm ? "vrm" : "glb", layerService)
+        void downloadLayerFile(layer.glbUrl, baseName, vrma ? "vrma" : vrm ? "vrm" : "glb", layerService)
         return
       }
 
@@ -6954,16 +6965,21 @@ export function CanvasEditor() {
                       size="sm"
                       onClick={() => {
                         const a = document.createElement("a")
+                        const vrma = isVrmaAsset(primarySelectedLayer.glbUrl, primarySelectedLayer.name)
                         const vrm = isVrmAsset(primarySelectedLayer.glbUrl, primarySelectedLayer.name)
                         a.href = primarySelectedLayer.glbUrl!
-                        a.download = `${primarySelectedLayer.name.replace(' Thumbnail', '').replace(/\s+/g, '_')}-OpenCartridge-${Date.now()}.${vrm ? 'vrm' : 'glb'}`
+                        a.download = `${primarySelectedLayer.name.replace(' Thumbnail', '').replace(/\s+/g, '_')}-OpenCartridge-${Date.now()}.${vrma ? 'vrma' : vrm ? 'vrm' : 'glb'}`
                         a.click()
                       }}
                       disabled={selectedLayerIds.length !== 1}
                       className="text-xs col-span-3 bg-blue-600 hover:bg-blue-700 text-white"
                     >
                       <Download className="w-3 h-3 mr-1" />
-                      {isVrmAsset(primarySelectedLayer.glbUrl, primarySelectedLayer.name) ? 'Export VRM' : 'Export GLB'}
+                      {isVrmaAsset(primarySelectedLayer.glbUrl, primarySelectedLayer.name)
+                        ? 'Export VRMA'
+                        : isVrmAsset(primarySelectedLayer.glbUrl, primarySelectedLayer.name)
+                          ? 'Export VRM'
+                          : 'Export GLB'}
                     </Button>
                   )}
                   <Button
