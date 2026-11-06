@@ -102,7 +102,11 @@ export const VRMViewer = forwardRef<VRMViewerHandle, VRMViewerProps>(function VR
     const resize = () => {
       const width = host.clientWidth || 1
       const height = host.clientHeight || 1
-      renderer.setSize(width, height, false)
+      // updateStyle must stay on: with updateStyle=false the canvas keeps its
+      // drawing-buffer size as its CSS size. On a HiDPI/4K display (DPR 1.5+
+      // from setPixelRatio) that makes the canvas larger than its host, so the
+      // viewer shows a cropped top-left corner of the frame.
+      renderer.setSize(width, height)
       camera.aspect = width / height
       camera.updateProjectionMatrix()
       // Re-frame: the panel can be created at one size and laid out at another

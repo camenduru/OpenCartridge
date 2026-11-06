@@ -327,6 +327,17 @@ const processErrorMessage = (errorData: any): string => {
   return 'Unknown error'
 }
 
+/**
+ * A 3D layer can be a GLB or a VRM avatar. Detect VRM from the URL or the
+ * layer name (thumbnail layers append " Thumbnail") so previews and exports
+ * keep the real container instead of mislabelling a VRM as GLB.
+ */
+function isVrmAsset(url?: string, name?: string) {
+  return Boolean(url) &&
+    (/\.vrm(\?|#|$)/i.test(url as string) ||
+      /\.vrm$/i.test((name || '').replace(' Thumbnail', '').trim()))
+}
+
 export function CanvasEditor() {
   const { resolvedTheme } = useTheme()
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -493,6 +504,14 @@ export function CanvasEditor() {
   }, [])
 
 
+  // VRM avatars cannot be captured with model-viewer (it ignores MToon, spring
+  // bones and VRM0 orientation), so they are rendered through three-vrm on an
+  // offscreen canvas instead of falling back to the generic "3D File" box.
+  const generateVRMThumbnail = useCallback(async (vrmUrl: string): Promise<HTMLImageElement> => {
+    const { renderVrmThumbnail } = await import('@/lib/vrm-thumbnail')
+    return renderVrmThumbnail(vrmUrl)
+  }, [])
+
   // Function to generate GLB thumbnail
   const generateGLBThumbnail = useCallback(async (glbUrl: string): Promise<HTMLImageElement> => {
     return new Promise((resolve, reject) => {
@@ -581,7 +600,9 @@ export function CanvasEditor() {
       for (const layer of glbLayers) {
         processedGlbUrls.current.add(layer.glbUrl!)
         try {
-          const thumbnail = await generateGLBThumbnail(layer.glbUrl!)
+          const thumbnail = isVrmAsset(layer.glbUrl, layer.name)
+            ? await generateVRMThumbnail(layer.glbUrl!)
+            : await generateGLBThumbnail(layer.glbUrl!)
           const croppedThumbnail = await cropTransparent(thumbnail)
           // Create a new image layer for the thumbnail
           const thumbnailLayer: Layer = {
@@ -631,7 +652,7 @@ export function CanvasEditor() {
     }
 
     generateThumbnails()
-  }, [layers, generateGLBThumbnail])
+  }, [layers, generateGLBThumbnail, generateVRMThumbnail])
 
   // Cartridge Properties resize functionality
   const [servicePropertiesHeight, setServicePropertiesHeight] = useState(128) // Default height in pixels
@@ -1709,7 +1730,7 @@ export function CanvasEditor() {
 
          try {
            const thumbnail = file.name.toLowerCase().endsWith('.vrm')
-            ? await generateDummyBoxThumbnail()
+            ? await generateVRMThumbnail(glbUrl)
             : await generateGLBThumbnail(glbUrl)
            const croppedThumbnail = await cropTransparent(thumbnail)
 
@@ -2329,7 +2350,7 @@ export function CanvasEditor() {
 
         try {
           const thumbnail = file.name.toLowerCase().endsWith('.vrm')
-            ? await generateDummyBoxThumbnail()
+            ? await generateVRMThumbnail(glbUrl)
             : await generateGLBThumbnail(glbUrl)
           const croppedThumbnail = await cropTransparent(thumbnail)
 
@@ -3163,14 +3184,6 @@ export function CanvasEditor() {
   // cartridge's declared `returns.ext` wins; otherwise the MIME type, otherwise
   // the URL — result layers point at /api/image-proxy?url=…, so the extension
   // lives in the query string, not at the end of the path.
-  // A 3D layer can hold either a GLB or a VRM avatar. Detect it from the URL
-  // or the layer name (thumbnail layers append " Thumbnail") so exports and
-  // downloads keep the real container instead of mislabelling a VRM as GLB.
-  const isVrmAsset = (url?: string, name?: string) =>
-    Boolean(url) &&
-    (/\.vrm(\?|#|$)/i.test(url!) ||
-      /\.vrm$/i.test((name || "").replace(" Thumbnail", "").trim()))
-
   const downloadLayerFile = async (url: string, baseName: string, fallbackExt: string, service?: any) => {
     const pick = (mime: string) => {
       const resolved = extensionFor(service, url, mime)
@@ -4471,8 +4484,11 @@ export function CanvasEditor() {
         // Handle GLB result
         const glbUrl = `/api/image-proxy?url=${encodeURIComponent(resultUrl)}`
 
-        // Generate thumbnail for the GLB
-        generateGLBThumbnail(glbUrl).then(async thumbnail => {
+        // Generate a thumbnail for the 3D result (VRM avatars need three-vrm)
+        const makeThumb = isVrmAsset(glbUrl, resultUrl)
+          ? generateVRMThumbnail(glbUrl)
+          : generateGLBThumbnail(glbUrl)
+        makeThumb.then(async thumbnail => {
           const croppedThumbnail = await cropTransparent(thumbnail)
 
           // Use functional update to ensure we have the latest layers state

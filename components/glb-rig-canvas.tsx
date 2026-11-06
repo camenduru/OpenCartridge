@@ -103,7 +103,10 @@ export const GLBRigCanvas = forwardRef<GLBRigCanvasHandle, GLBRigCanvasProps>(
       const resize = () => {
         const width = host.clientWidth || 1
         const height = host.clientHeight || 1
-        renderer.setSize(width, height, false)
+        // Keep the CSS size in sync with the host; otherwise a HiDPI drawing
+        // buffer (setPixelRatio > 1) is displayed at buffer size and the view
+        // is cropped to its top-left corner on 4K displays.
+        renderer.setSize(width, height)
         camera.aspect = width / height
         camera.updateProjectionMatrix()
       }
