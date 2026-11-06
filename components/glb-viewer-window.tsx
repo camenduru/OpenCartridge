@@ -53,6 +53,10 @@ export function GLBViewerWindow({
   const rigRef = useRef<GLBRigCanvasHandle | null>(null)
   const isVrm =
     /\.vrm(\?|#|$)/i.test(glbUrl) || /\.vrm(\?|#|$)/i.test(title)
+  // A .vrma is an animation with no mesh at all; the VRM viewer draws it as
+  // bones, which is the only thing there is to show.
+  const isVrma =
+    /\.vrma(\?|#|$)/i.test(glbUrl) || /\.vrma(\?|#|$)/i.test(title)
 
   // Bone overlay: off by default — the shaded model is what most people want,
   // and the rig view swaps the renderer rather than layering over it.
@@ -171,13 +175,13 @@ export function GLBViewerWindow({
 
     // The rig view is our own WebGL canvas — model-viewer's toBlob does not
     // exist here, so read the renderer's buffer instead.
-    if (showBones) {
+    if (showBones && !isVrma) {
       const dataUrl = rigRef.current?.capture()
       if (dataUrl) onCapture(dataUrl)
       return
     }
 
-    if (isVrm) {
+    if (isVrm || isVrma) {
       const dataUrl = vrmRef.current?.capture()
       if (dataUrl) onCapture(dataUrl)
       return
@@ -279,16 +283,18 @@ export function GLBViewerWindow({
               {playback.paused ? <Play className="h-3 w-3" /> : <Pause className="h-3 w-3" />}
             </Button>
           )}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowBones((value) => !value)}
-            className={`h-6 w-6 p-0 ${showBones ? 'bg-primary/15 text-primary' : ''}`}
-            title={showBones ? 'Hide bones' : 'Show bones'}
-            aria-pressed={showBones}
-          >
-            <Bone className="h-3 w-3" />
-          </Button>
+          {!isVrma && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowBones((value) => !value)}
+              className={`h-6 w-6 p-0 ${showBones ? 'bg-primary/15 text-primary' : ''}`}
+              title={showBones ? 'Hide bones' : 'Show bones'}
+              aria-pressed={showBones}
+            >
+              <Bone className="h-3 w-3" />
+            </Button>
+          )}
           {onCapture && (
             <Button
               variant="ghost"
@@ -318,9 +324,9 @@ export function GLBViewerWindow({
           <div className="flex-1 relative" style={{ height: `${size.height - 40}px` }}>
             {/* Playback is explicit: the result opens on frame 0 and the
                 Play/Pause button lives in the viewer's bottom-left corner. */}
-            {showBones ? (
+            {showBones && !isVrma ? (
               <RigCanvas ref={rigRef} glbUrl={glbUrl} onStatus={setRigStatus} />
-            ) : isVrm ? (
+            ) : isVrm || isVrma ? (
               <VRMViewer
                 ref={vrmRef}
                 url={glbUrl}
