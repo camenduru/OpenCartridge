@@ -31,6 +31,19 @@ const VRMViewer = dynamic(
   }
 ) as any
 
+// A BVH carries its own skeleton, so it gets its own bones viewer.
+const BVHViewer = dynamic(
+  () => import('./bvh-viewer').then((mod) => mod.BVHViewer),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+        Loading BVH viewer…
+      </div>
+    ),
+  }
+) as any
+
 interface GLBViewerWindowProps {
   glbUrl: string
   title: string
@@ -50,6 +63,7 @@ export function GLBViewerWindow({
 }: GLBViewerWindowProps) {
   const viewerRef = useRef<any>(null)
   const vrmRef = useRef<{ capture: () => string | null } | null>(null)
+  const bvhRef = useRef<{ capture: () => string | null } | null>(null)
   const rigRef = useRef<GLBRigCanvasHandle | null>(null)
   const isVrm =
     /\.vrm(\?|#|$)/i.test(glbUrl) || /\.vrm(\?|#|$)/i.test(title)
@@ -57,6 +71,9 @@ export function GLBViewerWindow({
   // bones, which is the only thing there is to show.
   const isVrma =
     /\.vrma(\?|#|$)/i.test(glbUrl) || /\.vrma(\?|#|$)/i.test(title)
+  // A .bvh is a skeleton with motion, and its own bones viewer.
+  const isBvh =
+    /\.bvh(\?|#|$)/i.test(glbUrl) || /\.bvh(\?|#|$)/i.test(title)
 
   // Bone overlay: off by default — the shaded model is what most people want,
   // and the rig view swaps the renderer rather than layering over it.
@@ -175,7 +192,7 @@ export function GLBViewerWindow({
 
     // The rig view is our own WebGL canvas — model-viewer's toBlob does not
     // exist here, so read the renderer's buffer instead.
-    if (showBones && !isVrma) {
+    if (showBones && !isVrma && !isBvh) {
       const dataUrl = rigRef.current?.capture()
       if (dataUrl) onCapture(dataUrl)
       return
@@ -183,6 +200,12 @@ export function GLBViewerWindow({
 
     if (isVrm || isVrma) {
       const dataUrl = vrmRef.current?.capture()
+      if (dataUrl) onCapture(dataUrl)
+      return
+    }
+
+    if (isBvh) {
+      const dataUrl = bvhRef.current?.capture()
       if (dataUrl) onCapture(dataUrl)
       return
     }
@@ -283,7 +306,7 @@ export function GLBViewerWindow({
               {playback.paused ? <Play className="h-3 w-3" /> : <Pause className="h-3 w-3" />}
             </Button>
           )}
-          {!isVrma && (
+          {!isVrma && !isBvh && (
             <Button
               variant="ghost"
               size="sm"
@@ -324,13 +347,20 @@ export function GLBViewerWindow({
           <div className="flex-1 relative" style={{ height: `${size.height - 40}px` }}>
             {/* Playback is explicit: the result opens on frame 0 and the
                 Play/Pause button lives in the viewer's bottom-left corner. */}
-            {showBones && !isVrma ? (
+            {showBones && !isVrma && !isBvh ? (
               <RigCanvas ref={rigRef} glbUrl={glbUrl} onStatus={setRigStatus} />
             ) : isVrm || isVrma ? (
               <VRMViewer
                 ref={vrmRef}
                 url={glbUrl}
                 vrma={isVrma}
+                style={{ width: '100%', height: '100%' }}
+              />
+            ) : isBvh ? (
+              <BVHViewer
+                ref={bvhRef}
+                url={glbUrl}
+                name={title}
                 style={{ width: '100%', height: '100%' }}
               />
             ) : (

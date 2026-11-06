@@ -348,6 +348,21 @@ function isVrmaAsset(url?: string, name?: string) {
       /\.vrma$/i.test((name || '').replace(' Thumbnail', '').trim()))
 }
 
+/** A .bvh is motion only, but unlike a .vrma it carries its own skeleton. */
+function isBvhAsset(url?: string, name?: string) {
+  return Boolean(url) &&
+    (/\.bvh(\?|#|$)/i.test(url as string) ||
+      /\.bvh$/i.test((name || '').replace(' Thumbnail', '').trim()))
+}
+
+/** The container a 3D layer really is — what its export has to be called. */
+function assetDownloadExt(url?: string, name?: string) {
+  if (isVrmaAsset(url, name)) return "vrma"
+  if (isBvhAsset(url, name)) return "bvh"
+  if (isVrmAsset(url, name)) return "vrm"
+  return "glb"
+}
+
 export function CanvasEditor() {
   const { resolvedTheme } = useTheme()
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -529,6 +544,12 @@ export function CanvasEditor() {
     return renderVrmaThumbnail(vrmaUrl)
   }, [])
 
+  // A .bvh carries its own skeleton, so its thumbnail is that rig's motion.
+  const generateBVHThumbnail = useCallback(async (bvhUrl: string): Promise<HTMLImageElement> => {
+    const { renderBvhThumbnail } = await import('@/lib/bvh-thumbnail')
+    return renderBvhThumbnail(bvhUrl)
+  }, [])
+
   // Function to generate GLB thumbnail
   const generateGLBThumbnail = useCallback(async (glbUrl: string): Promise<HTMLImageElement> => {
     return new Promise((resolve, reject) => {
@@ -621,7 +642,9 @@ export function CanvasEditor() {
             ? await generateVRMThumbnail(layer.glbUrl!)
             : isVrmaAsset(layer.glbUrl, layer.name)
               ? await generateVRMAThumbnail(layer.glbUrl!)
-              : await generateGLBThumbnail(layer.glbUrl!)
+              : isBvhAsset(layer.glbUrl, layer.name)
+                ? await generateBVHThumbnail(layer.glbUrl!)
+                : await generateGLBThumbnail(layer.glbUrl!)
           const croppedThumbnail = await cropTransparent(thumbnail)
           // Create a new image layer for the thumbnail
           const thumbnailLayer: Layer = {
@@ -671,7 +694,7 @@ export function CanvasEditor() {
     }
 
     generateThumbnails()
-  }, [layers, generateGLBThumbnail, generateVRMThumbnail, generateVRMAThumbnail])
+  }, [layers, generateGLBThumbnail, generateVRMThumbnail, generateVRMAThumbnail, generateBVHThumbnail])
 
   // Cartridge Properties resize functionality
   const [servicePropertiesHeight, setServicePropertiesHeight] = useState(128) // Default height in pixels
@@ -1549,7 +1572,7 @@ export function CanvasEditor() {
       const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'))
       const videoFiles = Array.from(files).filter(file => file.type.startsWith('video/'))
       const audioFiles = Array.from(files).filter(file => file.type.startsWith('audio/'))
-      const glbFiles = Array.from(files).filter(file => file.name.toLowerCase().endsWith('.glb') || file.name.toLowerCase().endsWith('.gltf') || file.name.toLowerCase().endsWith('.vrm') || file.name.toLowerCase().endsWith('.vrma'))
+      const glbFiles = Array.from(files).filter(file => file.name.toLowerCase().endsWith('.glb') || file.name.toLowerCase().endsWith('.gltf') || file.name.toLowerCase().endsWith('.vrm') || file.name.toLowerCase().endsWith('.vrma') || file.name.toLowerCase().endsWith('.bvh'))
 
      // Handle video files
      if (videoFiles.length > 0) {
@@ -1752,7 +1775,9 @@ export function CanvasEditor() {
             ? await generateVRMThumbnail(glbUrl)
             : file.name.toLowerCase().endsWith('.vrma')
               ? await generateVRMAThumbnail(glbUrl)
-              : await generateGLBThumbnail(glbUrl)
+              : file.name.toLowerCase().endsWith('.bvh')
+                ? await generateBVHThumbnail(glbUrl)
+                : await generateGLBThumbnail(glbUrl)
            const croppedThumbnail = await cropTransparent(thumbnail)
 
            // Calculate dimensions maintaining aspect ratio, with max dimension if enabled
@@ -1975,7 +2000,7 @@ export function CanvasEditor() {
     const imageFiles = allFiles.filter((file) => file.type.startsWith("image/"))
     const videoFiles = allFiles.filter((file) => file.type.startsWith("video/"))
     const audioFiles = allFiles.filter((file) => file.type.startsWith("audio/"))
-    const glbFiles = allFiles.filter((file) => file.name.toLowerCase().endsWith('.glb') || file.name.toLowerCase().endsWith('.gltf') || file.name.toLowerCase().endsWith('.vrm') || file.name.toLowerCase().endsWith('.vrma'))
+    const glbFiles = allFiles.filter((file) => file.name.toLowerCase().endsWith('.glb') || file.name.toLowerCase().endsWith('.gltf') || file.name.toLowerCase().endsWith('.vrm') || file.name.toLowerCase().endsWith('.vrma') || file.name.toLowerCase().endsWith('.bvh'))
 
     // Handle video files
     if (videoFiles.length > 0) {
@@ -2374,7 +2399,9 @@ export function CanvasEditor() {
             ? await generateVRMThumbnail(glbUrl)
             : file.name.toLowerCase().endsWith('.vrma')
               ? await generateVRMAThumbnail(glbUrl)
-              : await generateGLBThumbnail(glbUrl)
+              : file.name.toLowerCase().endsWith('.bvh')
+                ? await generateBVHThumbnail(glbUrl)
+                : await generateGLBThumbnail(glbUrl)
           const croppedThumbnail = await cropTransparent(thumbnail)
 
           // Calculate dimensions maintaining aspect ratio, with max dimension if enabled
@@ -3251,10 +3278,8 @@ export function CanvasEditor() {
 
       if (layer.type === 'glb' && layer.glbUrl) {
         // Keep the asset's real container: VRM avatars download as .vrm, VRM
-        // animations as .vrma, and only meshes are re-labelled as GLB.
-        const vrma = isVrmaAsset(layer.glbUrl, layer.name)
-        const vrm = isVrmAsset(layer.glbUrl, layer.name)
-        void downloadLayerFile(layer.glbUrl, baseName, vrma ? "vrma" : vrm ? "vrm" : "glb", layerService)
+        // animations as .vrma, BVH motion as .bvh, and only meshes as GLB.
+        void downloadLayerFile(layer.glbUrl, baseName, assetDownloadExt(layer.glbUrl, layer.name), layerService)
         return
       }
 
@@ -4513,7 +4538,9 @@ export function CanvasEditor() {
           ? generateVRMThumbnail(glbUrl)
           : isVrmaAsset(glbUrl, resultUrl)
             ? generateVRMAThumbnail(glbUrl)
-            : generateGLBThumbnail(glbUrl)
+            : isBvhAsset(glbUrl, resultUrl)
+              ? generateBVHThumbnail(glbUrl)
+              : generateGLBThumbnail(glbUrl)
         makeThumb.then(async thumbnail => {
           const croppedThumbnail = await cropTransparent(thumbnail)
 
@@ -5442,7 +5469,7 @@ export function CanvasEditor() {
             <input
               ref={layerInputRef}
               type="file"
-              accept="image/*,video/*,audio/*,.glb,.gltf,.vrm,.vrma"
+              accept="image/*,video/*,audio/*,.glb,.gltf,.vrm,.vrma,.bvh"
               multiple
               onChange={handleLayerUpload}
               className="hidden"
@@ -6980,21 +7007,16 @@ export function CanvasEditor() {
                       size="sm"
                       onClick={() => {
                         const a = document.createElement("a")
-                        const vrma = isVrmaAsset(primarySelectedLayer.glbUrl, primarySelectedLayer.name)
-                        const vrm = isVrmAsset(primarySelectedLayer.glbUrl, primarySelectedLayer.name)
+                        const ext = assetDownloadExt(primarySelectedLayer.glbUrl, primarySelectedLayer.name)
                         a.href = primarySelectedLayer.glbUrl!
-                        a.download = `${primarySelectedLayer.name.replace(' Thumbnail', '').replace(/\s+/g, '_')}-OpenCartridge-${Date.now()}.${vrma ? 'vrma' : vrm ? 'vrm' : 'glb'}`
+                        a.download = `${primarySelectedLayer.name.replace(' Thumbnail', '').replace(/\s+/g, '_')}-OpenCartridge-${Date.now()}.${ext}`
                         a.click()
                       }}
                       disabled={selectedLayerIds.length !== 1}
                       className="text-xs col-span-3 bg-blue-600 hover:bg-blue-700 text-white"
                     >
                       <Download className="w-3 h-3 mr-1" />
-                      {isVrmaAsset(primarySelectedLayer.glbUrl, primarySelectedLayer.name)
-                        ? 'Export VRMA'
-                        : isVrmAsset(primarySelectedLayer.glbUrl, primarySelectedLayer.name)
-                          ? 'Export VRM'
-                          : 'Export GLB'}
+                      {`Export ${assetDownloadExt(primarySelectedLayer.glbUrl, primarySelectedLayer.name).toUpperCase()}`}
                     </Button>
                   )}
                   <Button
