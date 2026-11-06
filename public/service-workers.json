@@ -248,7 +248,7 @@
     "uploadUrl": "http://localhost:9000",
     "workerUploadUrl": "http://host.docker.internal:9000",
     "container": {
-      "name": "glb2vrm",
+      "name": "glb2vrm-cartridge",
       "image": "camenduru/glb2vrm-cartridge:latest",
       "port": 8010,
       "hostPort": 8010,
