@@ -31,13 +31,13 @@
       "ext": "vrm",
       "layer": "3d"
     },
-    "thumbnail": "https://huggingface.co/camenduru/glb/resolve/main/glb2vrm-thumbnail.png",
+    "thumbnail": "https://huggingface.co/camenduru/glb/resolve/main/glb2vrm-skintokens-thumbnail.png",
     "examples": {
       "input": [
-        "https://huggingface.co/camenduru/glb/resolve/main/glb2vrm-example-front.glb"
+        "https://huggingface.co/camenduru/glb/resolve/main/glb2vrm-skintokens-rig.glb"
       ],
       "output": [
-        "https://huggingface.co/camenduru/glb/resolve/main/glb2vrm-example.vrm"
+        "https://huggingface.co/camenduru/glb/resolve/main/glb2vrm-skintokens.vrm"
       ]
     },
     "parameters": [
