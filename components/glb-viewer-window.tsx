@@ -19,6 +19,18 @@ const RigCanvas = dynamic(
   }
 ) as any
 
+// three-vrm is client-only (WebGL + DOM), so the VRM viewer never renders on
+// the server.
+const VRMViewer = dynamic(
+  () => import('./vrm-viewer').then((mod) => mod.VRMViewer),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center h-full text-sm text-muted-foreground">Loading VRM viewer…</div>
+    ),
+  }
+) as any
+
 interface GLBViewerWindowProps {
   glbUrl: string
   title: string
@@ -37,7 +49,10 @@ export function GLBViewerWindow({
   initialSize = { width: 600, height: 500 }
 }: GLBViewerWindowProps) {
   const viewerRef = useRef<any>(null)
+  const vrmRef = useRef<{ capture: () => string | null } | null>(null)
   const rigRef = useRef<GLBRigCanvasHandle | null>(null)
+  const isVrm =
+    /\.vrm(\?|#|$)/i.test(glbUrl) || /\.vrm(\?|#|$)/i.test(title)
 
   // Bone overlay: off by default — the shaded model is what most people want,
   // and the rig view swaps the renderer rather than layering over it.
@@ -158,6 +173,12 @@ export function GLBViewerWindow({
     // exist here, so read the renderer's buffer instead.
     if (showBones) {
       const dataUrl = rigRef.current?.capture()
+      if (dataUrl) onCapture(dataUrl)
+      return
+    }
+
+    if (isVrm) {
+      const dataUrl = vrmRef.current?.capture()
       if (dataUrl) onCapture(dataUrl)
       return
     }
@@ -299,6 +320,12 @@ export function GLBViewerWindow({
                 Play/Pause button lives in the viewer's bottom-left corner. */}
             {showBones ? (
               <RigCanvas ref={rigRef} glbUrl={glbUrl} onStatus={setRigStatus} />
+            ) : isVrm ? (
+              <VRMViewer
+                ref={vrmRef}
+                url={glbUrl}
+                style={{ width: '100%', height: '100%' }}
+              />
             ) : (
               <AnimatedModelViewer
                 src={glbUrl}

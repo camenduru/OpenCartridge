@@ -1,0 +1,130 @@
+[
+  {
+    "home": true,
+    "id": "glb2vrm",
+    "name": "GLB to VRM",
+    "description": "One rigged humanoid GLB in, a VRM avatar out: automatic humanoid bone mapping, then VRMify writes a VRM 1.0 or 0.x avatar with MToon materials.",
+    "category": "3d",
+    "icon": "Box",
+    "inputTypes": [
+      "file"
+    ],
+    "workerId": "",
+    "cost": "0",
+    "processingTime": "180",
+    "delay": "12000",
+    "overview": "GLB2VRM turns a rigged humanoid GLB into a VRM avatar. The skeleton is matched to the 22 VRM humanoid bones automatically — by bone name for known rigs (Mixamo, VRoid, Unity, Blender, HumanIK, 3ds Max Biped, MMD), and from the skeleton shape for generic rigs named bone_0…bone_21. Blender then imports the mesh and exports an FBX with the mapped bone names, VRMify's own converter builds a PMX model and writes the VRM (1.0 by default, 0.x optional), and the result is validated against the official VRM JSON schema. The returned avatar keeps its textures and materials as MToon. Drop a rigged humanoid GLB on the canvas, select that 3D layer, choose the options, then Run.",
+    "divisible": 32,
+    "inputs": [
+      {
+        "name": "input_mesh",
+        "accepts": [
+          "glb",
+          "model/gltf-binary"
+        ],
+        "bind": "primary",
+        "required": true
+      }
+    ],
+    "returns": {
+      "type": "model/vrm",
+      "ext": "vrm",
+      "layer": "3d"
+    },
+    "thumbnail": "https://huggingface.co/camenduru/glb/resolve/main/glb2vrm-thumbnail.png",
+    "examples": {
+      "input": [
+        "https://huggingface.co/camenduru/glb/resolve/main/glb2vrm-example-front.glb"
+      ],
+      "output": [
+        "https://huggingface.co/camenduru/glb/resolve/main/glb2vrm-example.vrm"
+      ]
+    },
+    "parameters": [
+      {
+        "name": "job_id",
+        "type": "string",
+        "label": "Job ID",
+        "required": false,
+        "defaultValue": "",
+        "ui": false
+      },
+      {
+        "name": "input_mesh",
+        "type": "file",
+        "label": "Rigged Humanoid GLB",
+        "required": true,
+        "ui": false,
+        "description": "A rigged humanoid .glb with an armature. The selected 3D layer is uploaded here automatically."
+      },
+      {
+        "name": "spec",
+        "type": "select",
+        "label": "VRM Version",
+        "defaultValue": "VRM 1.0",
+        "options": [
+          "VRM 1.0",
+          "VRM 0.x"
+        ],
+        "ui": true
+      },
+      {
+        "name": "tpose",
+        "type": "boolean",
+        "label": "T-Pose",
+        "defaultValue": true,
+        "ui": true,
+        "description": "Raise A-pose arms to the VRM T-pose."
+      },
+      {
+        "name": "spring",
+        "type": "boolean",
+        "label": "Spring Bones",
+        "defaultValue": true,
+        "ui": true,
+        "description": "Add hair, skirt and ribbon chains from bone names."
+      },
+      {
+        "name": "tex_max",
+        "type": "slider",
+        "label": "Texture Size",
+        "defaultValue": 2048,
+        "min": 0,
+        "max": 4096,
+        "step": 256,
+        "ui": true,
+        "description": "Downscale texture atlases. 0 keeps the original size."
+      },
+      {
+        "name": "tex_jpeg",
+        "type": "boolean",
+        "label": "JPEG Textures",
+        "defaultValue": false,
+        "ui": true,
+        "description": "Store opaque textures as JPEG to shrink the VRM."
+      },
+      {
+        "name": "face180",
+        "type": "boolean",
+        "label": "Face 180° Flip",
+        "defaultValue": false,
+        "ui": false,
+        "description": "Turn the avatar around when the facing detection comes out backwards."
+      },
+      {
+        "name": "title",
+        "type": "string",
+        "label": "Title",
+        "defaultValue": "OpenCartridge Avatar",
+        "ui": false
+      },
+      {
+        "name": "author",
+        "type": "string",
+        "label": "Author",
+        "defaultValue": "OpenCartridge",
+        "ui": false
+      }
+    ]
+  }
+]

@@ -182,6 +182,20 @@ const RigPreviewCanvas = dynamic(
   }
 ) as any
 
+// VRM avatars render through three-vrm (MToon materials + spring bones), which
+// model-viewer cannot do. Used by the examples tab and the canvas viewer.
+const VRMPreview = dynamic(
+  () => import('./vrm-viewer').then((mod) => mod.VRMViewer),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+        Loading VRM viewer…
+      </div>
+    ),
+  }
+) as any
+
 // Generated GLBs (SUPRA-Tex, SkinTokens, ...) are authored facing -Z, while
 // model-viewer's default orbit (0deg) looks at the model from +Z — the back.
 // Park the camera on the -Z side so previews and captures show the face.
@@ -1495,7 +1509,7 @@ export function CanvasEditor() {
       const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'))
       const videoFiles = Array.from(files).filter(file => file.type.startsWith('video/'))
       const audioFiles = Array.from(files).filter(file => file.type.startsWith('audio/'))
-      const glbFiles = Array.from(files).filter(file => file.name.toLowerCase().endsWith('.glb') || file.name.toLowerCase().endsWith('.gltf'))
+      const glbFiles = Array.from(files).filter(file => file.name.toLowerCase().endsWith('.glb') || file.name.toLowerCase().endsWith('.gltf') || file.name.toLowerCase().endsWith('.vrm'))
 
      // Handle video files
      if (videoFiles.length > 0) {
@@ -1694,7 +1708,9 @@ export function CanvasEditor() {
          const glbUrl = URL.createObjectURL(file)
 
          try {
-           const thumbnail = await generateGLBThumbnail(glbUrl)
+           const thumbnail = file.name.toLowerCase().endsWith('.vrm')
+            ? await generateDummyBoxThumbnail()
+            : await generateGLBThumbnail(glbUrl)
            const croppedThumbnail = await cropTransparent(thumbnail)
 
            // Calculate dimensions maintaining aspect ratio, with max dimension if enabled
@@ -1917,7 +1933,7 @@ export function CanvasEditor() {
     const imageFiles = allFiles.filter((file) => file.type.startsWith("image/"))
     const videoFiles = allFiles.filter((file) => file.type.startsWith("video/"))
     const audioFiles = allFiles.filter((file) => file.type.startsWith("audio/"))
-    const glbFiles = allFiles.filter((file) => file.name.toLowerCase().endsWith('.glb') || file.name.toLowerCase().endsWith('.gltf'))
+    const glbFiles = allFiles.filter((file) => file.name.toLowerCase().endsWith('.glb') || file.name.toLowerCase().endsWith('.gltf') || file.name.toLowerCase().endsWith('.vrm'))
 
     // Handle video files
     if (videoFiles.length > 0) {
@@ -2312,7 +2328,9 @@ export function CanvasEditor() {
         const glbUrl = URL.createObjectURL(file)
 
         try {
-          const thumbnail = await generateGLBThumbnail(glbUrl)
+          const thumbnail = file.name.toLowerCase().endsWith('.vrm')
+            ? await generateDummyBoxThumbnail()
+            : await generateGLBThumbnail(glbUrl)
           const croppedThumbnail = await cropTransparent(thumbnail)
 
           // Calculate dimensions maintaining aspect ratio, with max dimension if enabled
@@ -3145,6 +3163,14 @@ export function CanvasEditor() {
   // cartridge's declared `returns.ext` wins; otherwise the MIME type, otherwise
   // the URL — result layers point at /api/image-proxy?url=…, so the extension
   // lives in the query string, not at the end of the path.
+  // A 3D layer can hold either a GLB or a VRM avatar. Detect it from the URL
+  // or the layer name (thumbnail layers append " Thumbnail") so exports and
+  // downloads keep the real container instead of mislabelling a VRM as GLB.
+  const isVrmAsset = (url?: string, name?: string) =>
+    Boolean(url) &&
+    (/\.vrm(\?|#|$)/i.test(url!) ||
+      /\.vrm$/i.test((name || "").replace(" Thumbnail", "").trim()))
+
   const downloadLayerFile = async (url: string, baseName: string, fallbackExt: string, service?: any) => {
     const pick = (mime: string) => {
       const resolved = extensionFor(service, url, mime)
@@ -3188,11 +3214,10 @@ export function CanvasEditor() {
       }
 
       if (layer.type === 'glb' && layer.glbUrl) {
-        // For GLB layers, download the GLB file directly
-        const a = document.createElement("a")
-        a.href = layer.glbUrl!
-        a.download = `${baseName}.glb`
-        a.click()
+        // Keep the avatar's real container: VRM layers must download as .vrm,
+        // not be re-labelled as GLB.
+        const vrm = isVrmAsset(layer.glbUrl, layer.name)
+        void downloadLayerFile(layer.glbUrl, baseName, vrm ? "vrm" : "glb", layerService)
         return
       }
 
@@ -5375,7 +5400,7 @@ export function CanvasEditor() {
             <input
               ref={layerInputRef}
               type="file"
-              accept="image/*,video/*,audio/*,.glb,.gltf"
+              accept="image/*,video/*,audio/*,.glb,.gltf,.vrm"
               multiple
               onChange={handleLayerUpload}
               className="hidden"
@@ -6913,15 +6938,16 @@ export function CanvasEditor() {
                       size="sm"
                       onClick={() => {
                         const a = document.createElement("a")
+                        const vrm = isVrmAsset(primarySelectedLayer.glbUrl, primarySelectedLayer.name)
                         a.href = primarySelectedLayer.glbUrl!
-                        a.download = `${primarySelectedLayer.name.replace(' Thumbnail', '').replace(/\s+/g, '_')}-OpenCartridge-${Date.now()}.glb`
+                        a.download = `${primarySelectedLayer.name.replace(' Thumbnail', '').replace(/\s+/g, '_')}-OpenCartridge-${Date.now()}.${vrm ? 'vrm' : 'glb'}`
                         a.click()
                       }}
                       disabled={selectedLayerIds.length !== 1}
                       className="text-xs col-span-3 bg-blue-600 hover:bg-blue-700 text-white"
                     >
                       <Download className="w-3 h-3 mr-1" />
-                      Export GLB
+                      {isVrmAsset(primarySelectedLayer.glbUrl, primarySelectedLayer.name) ? 'Export VRM' : 'Export GLB'}
                     </Button>
                   )}
                   <Button
@@ -7546,6 +7572,7 @@ export function CanvasEditor() {
                                     case 'mov': return `Video Input (.${ext})`
                                     case 'glb':
                                     case 'gltf':
+                                    case 'vrm':
                                     case 'obj': return `3D Model Input (.${ext})`
                                     default: return ext ? `File Input (.${ext})` : 'File Input'
                                   }
@@ -7576,6 +7603,11 @@ export function CanvasEditor() {
                                       <audio controls src={path} className="w-full" />
                                     ) : ['mp4', 'webm', 'mov', 'avi'].includes(ext || '') ? (
                                       <video controls src={path} className="max-w-full h-auto rounded" />
+                                    ) : ext === 'vrm' ? (
+                                      <VRMPreview
+                                        url={path}
+                                        style={{ width: "100%", height: "600px" }}
+                                      />
                                     ) : ext === 'glb' || ext === 'gltf' ? (
                                       selectedServiceForExamples.examples?.inputBones ? (
                                         <div
@@ -7634,6 +7666,7 @@ export function CanvasEditor() {
                                     case 'mov': return `Video Output (.${ext})`
                                     case 'glb':
                                     case 'gltf':
+                                    case 'vrm':
                                     case 'obj': return `3D Model Output (.${ext})`
                                     case 'ply': return `Point Cloud Output (.${ext})`
                                     case 'fbx': return `FBX Output (.${ext})`
@@ -7666,6 +7699,11 @@ export function CanvasEditor() {
                                       <audio controls src={path} className="w-full" />
                                     ) : ['mp4', 'webm', 'mov', 'avi'].includes(ext || '') ? (
                                       <video controls src={path} className="max-w-full h-auto rounded" />
+                                    ) : ext === 'vrm' ? (
+                                      <VRMPreview
+                                        url={path}
+                                        style={{ width: "100%", height: "600px" }}
+                                      />
                                     ) : ext === 'glb' || ext === 'gltf' ? (
                                       selectedServiceForExamples.examples?.outputBones ? (
                                         <div
