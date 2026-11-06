@@ -3,8 +3,9 @@
 import React, { useRef, useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { Button } from '@/components/ui/button'
-import { X, Minus, Maximize2, Camera, Bone } from 'lucide-react'
+import { X, Minus, Maximize2, Camera, Bone, Play, Pause } from 'lucide-react'
 import type { GLBRigCanvasHandle, RigStatus } from './glb-rig-canvas'
+import { AnimatedModelViewer } from './animated-model-viewer'
 
 // three.js is client-only (it touches `window` when a renderer is constructed),
 // so the rig canvas never participates in the server render.
@@ -17,22 +18,6 @@ const RigCanvas = dynamic(
     ),
   }
 ) as any
-
-// Dynamically import model-viewer to avoid SSR issues
-const ModelViewer = dynamic(() => import('@google/model-viewer').then(() => {
-  // Return a component that renders the model-viewer
-  return ({ children, ...props }: any) => {
-    // Use React.createElement to avoid TypeScript issues
-    return React.createElement('model-viewer', props, children)
-  }
-}), {
-  ssr: false,
-  loading: () => <div className="flex items-center justify-center h-full text-sm text-muted-foreground">Loading 3D viewer...</div>
-})
-
-// Generated GLBs face -Z; model-viewer's default orbit looks from +Z, at the
-// back. Start on the -Z side so the model opens front-first.
-const MODEL_FRONT_CAMERA_ORBIT = "180deg 75deg auto"
 
 interface GLBViewerWindowProps {
   glbUrl: string
@@ -58,6 +43,12 @@ export function GLBViewerWindow({
   // and the rig view swaps the renderer rather than layering over it.
   const [showBones, setShowBones] = useState(false)
   const [rigStatus, setRigStatus] = useState<RigStatus | null>(null)
+  // Animation availability comes from the loaded GLB; the header button owns
+  // playback in this window, so the viewer's floating pill is hidden.
+  const [playback, setPlayback] = useState<{ animations: number; paused: boolean }>({
+    animations: 0,
+    paused: true,
+  })
 
   // Window state
   const [position, setPosition] = useState(initialPosition)
@@ -71,7 +62,6 @@ export function GLBViewerWindow({
   const [originalPosition, setOriginalPosition] = useState(initialPosition)
 
   const [error, setError] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
 
   // Update position and size when props change
   useEffect(() => {
@@ -132,32 +122,6 @@ export function GLBViewerWindow({
       document.removeEventListener('mouseup', handleGlobalMouseUp)
     }
   }, [isDragging, isResizing, dragStart])
-
-  // Handle model load event
-  useEffect(() => {
-    if (viewerRef.current) {
-      const handleProgress = (e: any) => {
-        if (e.detail?.totalProgress === 1) {
-          setIsLoading(false)
-        }
-      }
-      const handleLoad = () => setIsLoading(false)
-      viewerRef.current.addEventListener('progress', handleProgress)
-      viewerRef.current.addEventListener('load', handleLoad)
-      return () => {
-        if (viewerRef.current) {
-          viewerRef.current.removeEventListener('progress', handleProgress)
-          viewerRef.current.removeEventListener('load', handleLoad)
-        }
-      }
-    }
-  }, [])
-
-  // Fallback: hide progress bar after 3 seconds
-  useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 3000)
-    return () => clearTimeout(timer)
-  }, [])
 
 
   const toggleMinimize = () => {
@@ -220,6 +184,19 @@ export function GLBViewerWindow({
     }
   }
 
+  const togglePlayback = () => {
+    const viewer = viewerRef.current
+    if (!viewer || playback.animations === 0 || showBones) return
+
+    if (viewer.paused) {
+      viewer.play()
+      setPlayback({ animations: playback.animations, paused: false })
+    } else {
+      viewer.pause()
+      setPlayback({ animations: playback.animations, paused: true })
+    }
+  }
+
   if (error) {
     return (
       <div
@@ -261,6 +238,26 @@ export function GLBViewerWindow({
       >
         <span className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{title}</span>
         <div className="flex items-center gap-1">
+          {playback.animations > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={togglePlayback}
+              disabled={showBones}
+              className={`h-6 w-6 p-0 ${!showBones && !playback.paused ? 'bg-primary/15 text-primary' : ''}`}
+              title={
+                showBones
+                  ? 'Switch off the bones view to play the animation'
+                  : playback.paused
+                    ? 'Play animation'
+                    : 'Pause animation'
+              }
+              aria-label={playback.paused ? 'Play animation' : 'Pause animation'}
+              aria-pressed={!playback.paused}
+            >
+              {playback.paused ? <Play className="h-3 w-3" /> : <Pause className="h-3 w-3" />}
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="sm"
@@ -298,32 +295,23 @@ export function GLBViewerWindow({
       {!isMinimized && (
         <>
           <div className="flex-1 relative" style={{ height: `${size.height - 40}px` }}>
+            {/* Playback is explicit: the result opens on frame 0 and the
+                Play/Pause button lives in the viewer's bottom-left corner. */}
             {showBones ? (
               <RigCanvas ref={rigRef} glbUrl={glbUrl} onStatus={setRigStatus} />
             ) : (
-              <ModelViewer
-                ref={viewerRef}
+              <AnimatedModelViewer
                 src={glbUrl}
                 alt="3D Model"
-                camera-controls
-                auto-rotate
-                camera-orbit={MODEL_FRONT_CAMERA_ORBIT}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  backgroundColor: 'transparent'
-                }}
+                viewerRef={viewerRef}
+                style={{ width: '100%', height: '100%' }}
+                showControls={false}
+                onPlaybackChange={setPlayback}
                 onError={(e: Event) => {
                   console.error('Model viewer error:', e)
                   setError('Failed to load GLB file')
                 }}
-              >
-                {isLoading && (
-                  <div slot="progress-bar" className="w-full h-1 bg-muted rounded">
-                    <div className="h-full bg-primary rounded animate-pulse"></div>
-                  </div>
-                )}
-              </ModelViewer>
+              />
             )}
 
             {/* What the rig view found — a rigged GLB that came back without

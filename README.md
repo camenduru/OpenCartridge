@@ -76,6 +76,7 @@ container, points it at the built-in MinIO and starts it. No `docker run`, no en
 - **Idol 3D** *(3d)* — one image in, a 3D model out: Idol predicts the whole object, including the sides the photo never showed, and the cartridge meshes it into a GLB
 - **SUPRA-Tex** *(3d)* — one photo in, a textured 3D model out: reconstructs the object's geometry from a single view and super-aligns a full PBR material onto it, returning a GLB
 - **SkinTokens Rig** *(3d)* — one mesh in, a rigged mesh out: TokenRig predicts a skeleton and per-vertex skin weights and returns the rigged GLB, ready to pose in Blender, Unity or three.js
+- **UniMate Motion** *(3d)* — one rigged mesh plus a text prompt in, an animated mesh out: UniMate predicts articulated motion for any skeleton and bakes it onto your rig as a GLB animation
 - **YuE2 Text to Music** *(audio)* — generate a complete song — vocals and instruments — from a style description and lyrics, with an optional editable ABC melody plan
 - **Breeze TTS Plain** *(audio)* — text in, one voice take out: the model reads your line in its default voice, bilingual EN/ZH with inline vocal events
 - **Breeze TTS Design** *(audio)* — invent a voice from a written description and have it speak your line

@@ -16,7 +16,10 @@ export interface AIService {
     cost: string
     processingTime: string
     delay: string
-    examples?: { input: string[], output: string[] }
+    examples?: { input: string[], output: string[], inputBones?: boolean, outputBones?: boolean }
+    // Optional poster for the 3D catalogue card. Inputs and outputs stay the
+    // real artifacts; cards need a raster image because they are <img> tags.
+    thumbnail?: string
     divisible?: number
     // Set by /api/ai-services from the worker registry: the local worker this
     // service runs on and the MinIO server its inputs are uploaded to. When

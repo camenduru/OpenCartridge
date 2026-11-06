@@ -47,7 +47,8 @@ A UTF-8 BOM is accepted.
 | `inputs` | which parameter a selected layer binds to (v2, optional) |
 | `returns` | what the job produces (v2, optional) |
 | `requires` | capabilities the cartridge would like (v2, optional, advisory) |
-| `examples` | `{ "input": [url], "output": [url] }` |
+| `examples` | `{ "input": [url], "output": [url], "inputBones": true, "outputBones": true }` — the `*Bones` flags render that GLB with the canvas viewer's skeleton overlay (thin `SkeletonHelper` bones over the real mesh) |
+| `thumbnail` | optional raster poster for the catalogue card (used by 3D cartridges, whose card is an `<img>`); `examples` still lists the real artifacts |
 | `cost`, `processingTime`, `delay`, `divisible`, `home`, `workerId`, `inputTypes` | unchanged from v1 |
 
 ### Parameters

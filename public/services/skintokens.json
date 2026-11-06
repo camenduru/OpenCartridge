@@ -31,13 +31,15 @@
       "ext": "glb",
       "layer": "3d"
     },
+    "thumbnail": "https://huggingface.co/camenduru/glb/resolve/main/skintokens-eagle-thumbnail.png",
     "examples": {
       "input": [
-        "https://examples.tost.ai/ijofewhou4389r.png"
+        "https://huggingface.co/camenduru/glb/resolve/main/skintokens-eagle-input.glb"
       ],
       "output": [
-        "https://examples.tost.ai/ijofewhou4389rr.png"
-      ]
+        "https://huggingface.co/camenduru/glb/resolve/main/skintokens-eagle-rigged.glb"
+      ],
+      "outputBones": true
     },
     "parameters": [
       {

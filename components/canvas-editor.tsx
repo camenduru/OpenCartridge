@@ -81,6 +81,7 @@ import {
 import { cn } from "@/lib/utils"
 import { ThemeToggle } from "./theme-toggle"
 import { GLBViewerWindow } from "./glb-viewer-window"
+import { AnimatedModelViewer } from "./animated-model-viewer"
 import { WaveformOverlay } from "./waveform-overlay"
 import {
   declaredInputEntry,
@@ -165,6 +166,21 @@ const ModelViewer = dynamic(() => import('@google/model-viewer').then(() => {
   ssr: false,
   loading: () => <div className="w-full h-40 bg-muted animate-pulse rounded border flex items-center justify-center text-sm text-muted-foreground">Loading 3D viewer...</div>
 })
+
+// The canvas viewer's bone overlay (THREE.SkeletonHelper over the real mesh)
+// is also the right preview for a rigging cartridge's example output, so the
+// examples tab can opt into it per catalog with `examples.outputBones`.
+const RigPreviewCanvas = dynamic(
+  () => import('./glb-rig-canvas').then((mod) => mod.GLBRigCanvas),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+        Loading rig viewer…
+      </div>
+    ),
+  }
+) as any
 
 // Generated GLBs (SUPRA-Tex, SkinTokens, ...) are authored facing -Z, while
 // model-viewer's default orbit (0deg) looks at the model from +Z — the back.
@@ -7385,10 +7401,10 @@ export function CanvasEditor() {
                                   </div>
                                 )
                               })()}
-                              {service.category === "3d" && service.examples?.input && service.examples.input.length > 0 && (
+                              {service.category === "3d" && (service.thumbnail || service.examples?.input?.[0]) && (
                                 <div className="mt-2">
                                   <img
-                                    src={service.examples.input[0]}
+                                    src={service.thumbnail || service.examples?.input?.[0] || ""}
                                     alt={`${service.name} example input`}
                                     className="w-full aspect-video object-cover rounded border"
                                     onError={(e) => {
@@ -7561,17 +7577,26 @@ export function CanvasEditor() {
                                     ) : ['mp4', 'webm', 'mov', 'avi'].includes(ext || '') ? (
                                       <video controls src={path} className="max-w-full h-auto rounded" />
                                     ) : ext === 'glb' || ext === 'gltf' ? (
-                                      <ModelViewer
-                                        src={path}
-                                        alt={`Input ${index + 1}`}
-                                        camera-controls
-                                        auto-rotate
-                                        camera-orbit={MODEL_FRONT_CAMERA_ORBIT}
-                                        debug
-                                        style={{ width: "100%", height: "600px" }}
-                                      >
-                                        <div slot="progress-bar"></div>
-                                      </ModelViewer>
+                                      selectedServiceForExamples.examples?.inputBones ? (
+                                        <div
+                                          className="w-full overflow-hidden rounded bg-muted/20"
+                                          style={{ height: "600px" }}
+                                        >
+                                          <RigPreviewCanvas glbUrl={path} />
+                                        </div>
+                                      ) : (
+                                        <ModelViewer
+                                          src={path}
+                                          alt={`Input ${index + 1}`}
+                                          camera-controls
+                                          auto-rotate
+                                          camera-orbit={MODEL_FRONT_CAMERA_ORBIT}
+                                          debug
+                                          style={{ width: "100%", height: "600px" }}
+                                        >
+                                          <div slot="progress-bar"></div>
+                                        </ModelViewer>
+                                      )
                                     ) : ext === 'txt' ? (
                                       <div className="bg-background rounded p-3 max-h-40 overflow-y-auto">
                                         <pre className="text-xs whitespace-pre-wrap font-mono">
@@ -7642,14 +7667,20 @@ export function CanvasEditor() {
                                     ) : ['mp4', 'webm', 'mov', 'avi'].includes(ext || '') ? (
                                       <video controls src={path} className="max-w-full h-auto rounded" />
                                     ) : ext === 'glb' || ext === 'gltf' ? (
-                                      <ModelViewer
-                                        src={path}
-                                        alt={`Output ${index + 1}`}
-                                        camera-controls
-                                        auto-rotate
-                                        camera-orbit={MODEL_FRONT_CAMERA_ORBIT}
-                                        style={{ width: "100%", height: "600px" }}
-                                      />
+                                      selectedServiceForExamples.examples?.outputBones ? (
+                                        <div
+                                          className="w-full overflow-hidden rounded bg-muted/20"
+                                          style={{ height: "600px" }}
+                                        >
+                                          <RigPreviewCanvas glbUrl={path} />
+                                        </div>
+                                      ) : (
+                                        <AnimatedModelViewer
+                                          src={path}
+                                          alt={`Output ${index + 1}`}
+                                          style={{ width: "100%", height: "600px" }}
+                                        />
+                                      )
                                     ) : ext === 'txt' ? (
                                       <div className="bg-background rounded p-3 max-h-40 overflow-y-auto">
                                         <pre className="text-xs whitespace-pre-wrap font-mono">

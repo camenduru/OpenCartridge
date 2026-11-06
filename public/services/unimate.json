@@ -1,0 +1,118 @@
+[
+  {
+    "home": true,
+    "id": "unimate",
+    "name": "UniMate Motion",
+    "description": "A rigged mesh and a text prompt in, an animated GLB out: UniMate generates articulated motion for any skeleton and drives the mesh with it.",
+    "category": "3d",
+    "icon": "Box",
+    "inputTypes": [
+      "file"
+    ],
+    "workerId": "",
+    "cost": "0",
+    "processingTime": "90",
+    "delay": "12000",
+    "overview": "UniMate is one unified model for text-to-animation on arbitrary skeletons: no per-skeleton retraining and no test-time optimization. It reads the rig's joint topology and anatomical joint labels, predicts a motion clip with flow matching, and drives the mesh you supply. This cartridge takes a rigged GLB, glTF or FBX with one armature, labels its joints with deterministic offline rules, bakes the asset into UniMate's canonical frame, samples the motion at your prompt and guidance, and returns the same mesh with the generated motion baked in as one animation. Prompts work best in the training style: start with \"An object\" and describe one motion, for example \"An object flaps its wings.\" or \"An object walks forward.\" The released checkpoint takes rigs of up to 71 joints; full characters with finger and face bones need simplifying first. Drop a rigged mesh on the canvas, select that 3D layer, write a prompt, then Run.",
+    "divisible": 32,
+    "inputs": [
+      {
+        "name": "input_mesh",
+        "accepts": [
+          "glb",
+          "gltf",
+          "fbx",
+          "model/gltf-binary",
+          "model/gltf+json"
+        ],
+        "bind": "primary",
+        "required": true
+      }
+    ],
+    "returns": {
+      "type": "model/gltf-binary",
+      "ext": "glb",
+      "layer": "3d"
+    },
+    "thumbnail": "https://huggingface.co/camenduru/glb/resolve/main/unimate-eagle.png",
+    "examples": {
+      "input": [
+        "https://huggingface.co/camenduru/glb/resolve/main/unimate-eagle.glb",
+        "https://huggingface.co/camenduru/glb/resolve/main/unimate-eagle-prompt.txt"
+      ],
+      "output": [
+        "https://huggingface.co/camenduru/glb/resolve/main/unimate-eagle-clean.glb"
+      ],
+      "inputBones": true
+    },
+    "parameters": [
+      {
+        "name": "job_id",
+        "type": "string",
+        "label": "Job ID",
+        "required": false,
+        "defaultValue": "",
+        "ui": false
+      },
+      {
+        "name": "input_mesh",
+        "type": "file",
+        "label": "Rigged Mesh",
+        "required": true,
+        "ui": false,
+        "description": "A rigged .glb / .gltf / .fbx with one armature. The selected 3D layer is uploaded here automatically."
+      },
+      {
+        "name": "prompt",
+        "type": "string",
+        "label": "Motion Prompt",
+        "defaultValue": "An object walks forward.",
+        "ui": true,
+        "description": "Describe one motion in the training style: start with \"An object\", do not describe the character."
+      },
+      {
+        "name": "cfg_scale",
+        "type": "slider",
+        "label": "Prompt Guidance",
+        "defaultValue": 3,
+        "min": 1.5,
+        "max": 7,
+        "step": 0.5,
+        "ui": true,
+        "description": "How strongly the prompt is followed. Raise it when a prompt is ignored, lower it for calmer motion."
+      },
+      {
+        "name": "seed",
+        "type": "number",
+        "label": "Seed",
+        "defaultValue": 0,
+        "ui": false,
+        "description": "0 picks a random seed."
+      },
+      {
+        "name": "face_r",
+        "type": "string",
+        "label": "Facing Right Bone",
+        "defaultValue": "",
+        "ui": false,
+        "description": "Optional: raw bone name of the right (or head) facing joint."
+      },
+      {
+        "name": "face_l",
+        "type": "string",
+        "label": "Facing Left Bone",
+        "defaultValue": "",
+        "ui": false,
+        "description": "Optional: raw bone name of the left (or tail) facing joint."
+      },
+      {
+        "name": "rest_rotation",
+        "type": "string",
+        "label": "Rest Rotation",
+        "defaultValue": "",
+        "ui": false,
+        "description": "Optional: axis turns for a rig authored lying down or upside down, e.g. x180 or x90,y180."
+      }
+    ]
+  }
+]
