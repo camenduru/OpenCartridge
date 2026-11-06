@@ -7642,6 +7642,7 @@ export function CanvasEditor() {
                                     case 'glb':
                                     case 'gltf':
                                     case 'vrm':
+                                    case 'vrma':
                                     case 'obj': return `3D Model Input (.${ext})`
                                     default: return ext ? `File Input (.${ext})` : 'File Input'
                                   }
@@ -7675,6 +7676,12 @@ export function CanvasEditor() {
                                     ) : ext === 'vrm' ? (
                                       <VRMPreview
                                         url={path}
+                                        style={{ width: "100%", height: "600px" }}
+                                      />
+                                    ) : ext === 'vrma' ? (
+                                      <VRMPreview
+                                        url={path}
+                                        vrma
                                         style={{ width: "100%", height: "600px" }}
                                       />
                                     ) : ext === 'glb' || ext === 'gltf' ? (
@@ -7736,6 +7743,7 @@ export function CanvasEditor() {
                                     case 'glb':
                                     case 'gltf':
                                     case 'vrm':
+                                    case 'vrma':
                                     case 'obj': return `3D Model Output (.${ext})`
                                     case 'ply': return `Point Cloud Output (.${ext})`
                                     case 'fbx': return `FBX Output (.${ext})`
@@ -7771,6 +7779,12 @@ export function CanvasEditor() {
                                     ) : ext === 'vrm' ? (
                                       <VRMPreview
                                         url={path}
+                                        style={{ width: "100%", height: "600px" }}
+                                      />
+                                    ) : ext === 'vrma' ? (
+                                      <VRMPreview
+                                        url={path}
+                                        vrma
                                         style={{ width: "100%", height: "600px" }}
                                       />
                                     ) : ext === 'glb' || ext === 'gltf' ? (
