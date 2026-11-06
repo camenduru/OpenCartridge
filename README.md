@@ -12,6 +12,8 @@ https://github.com/user-attachments/assets/4c323c93-db7b-40b9-a6d3-7b48e577aef1
 
 <img width="1920" height="1080" alt="Screenshot 2026-10-30 065139" src="https://github.com/user-attachments/assets/978b98fe-f490-4be5-901e-aea732dedfb2" />
 
+https://github.com/user-attachments/assets/cdb600ba-3016-4f1a-b988-53442ed19566
+
 **OpenCartridge** is a local-first AI game asset suite: a canvas for composing images, sprite sheets, animation, audio and 3D, driven by ComfyUI workers running on your own GPU. Built on [camenduru's TostUI](https://github.com/camenduru/TostUI).
 
 ## ✨ What's inside
