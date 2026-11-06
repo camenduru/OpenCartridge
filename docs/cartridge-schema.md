@@ -160,6 +160,8 @@ container spec the app is allowed to act on.
 - `extraHosts` mirrors `docker run --add-host name:host-gateway`. The app always adds
   `host.docker.internal:host-gateway` itself, because `s3_endpoint_url` and the input URL the worker downloads both use
   that name and plain Linux Docker does not resolve it; the field only exists to add more.
+- `shmSize` is `/dev/shm` in bytes, i.e. `docker run --shm-size` (`8589934592` = 8 GB). PyTorch's DataLoader workers
+  pass batches through `/dev/shm`, and Docker's 64 MB default deadlocks the pipeline instead of failing.
 - `apiUrl` may be written as `host.docker.internal`, `127.0.0.1` or a real remote host. The app tries the loopback
   twin and the bridge gateway before reporting a worker unreachable (`lib/worker-url.mjs`), so an install that was
   started without the alias flag still works.

@@ -37,6 +37,7 @@ type WorkerEntry = {
     port: number
     hostPort?: number
     gpus?: boolean
+    shmSize?: number
     command?: string[]
     env?: Record<string, string>
     restart?: string
@@ -78,6 +79,9 @@ function specFor(entry: WorkerEntry) {
     port: container.port,
     hostPort: container.hostPort ?? container.port,
     gpus: container.gpus !== false,
+    // /dev/shm in bytes: PyTorch DataLoader workers need more than Docker's
+    // 64 MB default (VRMExMR's SAM 3D Body stage deadlocks without it).
+    shmSize: container.shmSize,
     command: container.command ?? [],
     env: expandEnv(container.env),
     restart: container.restart,

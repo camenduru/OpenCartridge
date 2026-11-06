@@ -1,0 +1,141 @@
+[
+  {
+    "home": true,
+    "id": "vrmexmr",
+    "name": "VRMExMR",
+    "description": "Video in, VRM Animation out: ExMR reconstructs the body, hand and foot motion of the person in the clip, and the worker bakes it into a .vrma you can play on any VRM avatar.",
+    "category": "3d",
+    "icon": "Box",
+    "inputTypes": [
+      "video"
+    ],
+    "workerId": "",
+    "cost": "0",
+    "processingTime": "600",
+    "delay": "12000",
+    "overview": "ExMR (Meta + TU Munich) recovers metric 3D motion from an ordinary clip: YOLO11 tracks the person, Sapiens2-1B or RTMW gives the 2D keypoints, SAM 3D Body samples body features, HaMeR refines the hands and SimpleVO recovers the camera motion, and the released checkpoint turns all of it into SMPL-X parameters with feet that stay on the ground. This cartridge runs that pipeline with the UI's own options and then does what the browser UI does on export — it retargets the result onto the VRM humanoid and bakes the bone rotations into a VRM Animation (.vrma), the avatar-independent format three-vrm plays on any avatar. The BVH and the AMASS SMPL-X file ExMR writes come back with it. Select a video layer, choose the options, then Run.",
+    "divisible": 32,
+    "inputs": [
+      {
+        "name": "input_video",
+        "accepts": [
+          "video/*"
+        ],
+        "bind": "primary",
+        "required": true
+      }
+    ],
+    "returns": {
+      "type": "model/gltf-binary",
+      "ext": "vrma",
+      "layer": "3d"
+    },
+    "parameters": [
+      {
+        "name": "job_id",
+        "type": "string",
+        "label": "Job ID",
+        "required": false,
+        "defaultValue": "",
+        "ui": false
+      },
+      {
+        "name": "input_video",
+        "type": "file",
+        "label": "Source Clip",
+        "required": true,
+        "ui": false,
+        "description": "The clip to capture. The selected video layer is uploaded here automatically."
+      },
+      {
+        "name": "mode",
+        "type": "select",
+        "label": "Mode",
+        "defaultValue": "balanced",
+        "options": [
+          "fast",
+          "balanced",
+          "accurate"
+        ],
+        "ui": true,
+        "description": "Fast: YOLO11m + RTMW-x. Balanced: YOLO11m + Sapiens2-1B. Accurate: YOLO11x + Sapiens2-1B at 1024x768."
+      },
+      {
+        "name": "static_cam",
+        "type": "boolean",
+        "label": "Static Camera",
+        "defaultValue": true,
+        "ui": true,
+        "description": "The camera does not move. Switch off to estimate its motion (slower, and the world-frame travel depends on it)."
+      },
+      {
+        "name": "snap_to_ground",
+        "type": "boolean",
+        "label": "Snap to Ground",
+        "defaultValue": false,
+        "ui": true,
+        "description": "Assume one flat ground: removes the vertical drift that makes long clips fly or sink."
+      },
+      {
+        "name": "root_motion",
+        "type": "boolean",
+        "label": "Root Motion",
+        "defaultValue": true,
+        "ui": true,
+        "description": "Write the hips translation into the .vrma, so the avatar travels with the person. Off keeps it in place."
+      },
+      {
+        "name": "start",
+        "type": "string",
+        "label": "Start",
+        "defaultValue": "",
+        "ui": true,
+        "description": "Only from this time on: seconds (83.5) or [hh:]mm:ss (1:23.5). Empty starts at the beginning."
+      },
+      {
+        "name": "end",
+        "type": "string",
+        "label": "End",
+        "defaultValue": "",
+        "ui": true,
+        "description": "Only up to this time. Empty runs to the end of the clip."
+      },
+      {
+        "name": "export_fps",
+        "type": "number",
+        "label": "Animation FPS (0 = video)",
+        "defaultValue": 0,
+        "ui": false,
+        "description": "Resample the animation, e.g. 24 for film or 60 for games."
+      },
+      {
+        "name": "smoothing",
+        "type": "select",
+        "label": "Smoothing",
+        "defaultValue": "global",
+        "options": [
+          "global",
+          "both",
+          "none"
+        ],
+        "ui": false
+      },
+      {
+        "name": "fps30",
+        "type": "boolean",
+        "label": "Resample to 30 fps",
+        "defaultValue": false,
+        "ui": false,
+        "description": "ExMR is trained on 30 fps; try it for 50/60 fps clips."
+      },
+      {
+        "name": "f_mm",
+        "type": "number",
+        "label": "Focal Length (mm, 0 = auto)",
+        "defaultValue": 0,
+        "ui": false,
+        "description": "35 mm equivalent focal length of the camera, if known."
+      }
+    ]
+  }
+]
