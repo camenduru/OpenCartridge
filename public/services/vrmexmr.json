@@ -13,7 +13,7 @@
     "cost": "0",
     "processingTime": "600",
     "delay": "12000",
-    "overview": "ExMR (Meta + TU Munich) recovers metric 3D motion from an ordinary clip: YOLO11 tracks the person, Sapiens2-1B or RTMW gives the 2D keypoints, SAM 3D Body samples body features, HaMeR refines the hands and SimpleVO recovers the camera motion, and the released checkpoint turns all of it into SMPL-X parameters with feet that stay on the ground. This cartridge runs that pipeline with the UI's own options and then does what the browser UI does on export — it retargets the result onto the VRM humanoid and bakes the bone rotations into a VRM Animation (.vrma), the avatar-independent format three-vrm plays on any avatar. The BVH and the AMASS SMPL-X file ExMR writes come back with it. Select a video layer, choose the options, then Run.",
+    "overview": "ExMR (Meta + TU Munich) recovers metric 3D motion from an ordinary clip: YOLO11 tracks the person, Sapiens2-1B or RTMW gives the 2D keypoints, SAM 3D Body samples body features, HaMeR refines the hands and SimpleVO recovers the camera motion, and the released checkpoint turns all of it into SMPL-X parameters with feet that stay on the ground. This cartridge runs that pipeline with the UI's own options and then does what the browser UI does on export — it retargets the result onto the VRM humanoid and bakes the bone rotations into a VRM Animation (.vrma), the avatar-independent format three-vrm plays on any avatar. The BVH ExMR writes comes back with it. Select a video layer, choose the options, then Run.",
     "divisible": 32,
     "inputs": [
       {
