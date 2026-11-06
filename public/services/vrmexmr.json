@@ -30,6 +30,7 @@
       "ext": "vrma",
       "layer": "3d"
     },
+    "thumbnail": "https://huggingface.co/camenduru/glb/resolve/main/dance.png",
     "examples": {
       "input": [
         "https://huggingface.co/camenduru/glb/resolve/main/dance.mp4"
