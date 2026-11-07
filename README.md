@@ -82,6 +82,7 @@ container, points it at the built-in MinIO and starts it. No `docker run`, no en
 - **GLB to VRM** *(3d)* — one rigged humanoid GLB in, a VRM avatar out: automatic humanoid bone mapping, Blender bridge, MToon textures and optional spring bones
 - **VRMExMR** *(3d)* — one video in, a VRM Animation out: ExMR reconstructs the body, hand and foot motion of the person in the clip and bakes it into a `.vrma` that plays on any VRM avatar, with the BVH returned alongside
 - **UniForge3D** *(3d)* — one or more unposed views in, a complete textured asset out: select any number of image layers on the canvas and it reconstructs the sides it sees and generates the ones it does not in one shared anchor-guided space, returning a GLB with a baked PBR material
+- **Kimodo** *(3d)* — a text prompt in, a VRM Animation out: describe the motion and Kimodo generates a `.vrma` that plays on any VRM avatar, with the same motion written as a SOMA77 BVH alongside
 - **YuE2 Text to Music** *(audio)* — generate a complete song — vocals and instruments — from a style description and lyrics, with an optional editable ABC melody plan
 - **Breeze TTS Plain** *(audio)* — text in, one voice take out: the model reads your line in its default voice, bilingual EN/ZH with inline vocal events
 - **Breeze TTS Design** *(audio)* — invent a voice from a written description and have it speak your line
@@ -123,6 +124,7 @@ Requires an NVIDIA GPU (~24 GB VRAM is enough for the current workers). The firs
 - **GLB to VRM** — [GLB2VRM](https://github.com/camenduru/GLB2VRM) and the VRMify conversion chain (GPL-3.0), against the [VRM](https://vrm.dev/) spec
 - **VRMExMR** — [VRMExMR](https://github.com/camenduru/VRMExMR) and ExMR motion reconstruction; SMPL-X, MANO, SAM 3D Body, Sapiens2 and YOLO each carry their own licence — see that repository's `THIRD_PARTY_NOTICES.md`
 - **UniForge3D** — [UniForge3D](https://github.com/xibushu/UniForge3D) by Wenjue Chen, Wenyue Chen and co-authors (Peking University, Math Magic, HKUST), on [TRELLIS.2](https://github.com/microsoft/TRELLIS.2) and [VGGT](https://github.com/facebookresearch/vggt)
+- **Kimodo** — [Kimodo](https://github.com/nv-tlabs/kimodo) by NVIDIA, a text-driven motion diffusion model on the SOMA skeleton; the `.vrma` is written by Kimodo's own VRMA exporter and the BVH by the cartridge's SOMA77 writer
 - **YuE2 Text to Music** — [YuE](https://github.com/multimodal-art-projection/YuE) by the Multimodal Art Projection team, weights packaged by [Comfy-Org](https://huggingface.co/Comfy-Org/YuE2)
 - **Breeze TTS Plain / Design / Clone / Direct** — [Breeze TTS 2](https://huggingface.co/BreezeBlue/Breeze-TTS-2) by [BreezeBlue](https://github.com/breezeblue-ai/breeze-tts); the worker form of [TostAI-Voice-Studio](https://github.com/camenduru/TostAI-Voice-Studio). Research / non-commercial use only
 - **MOSS Sound Effect** — [MOSS-SoundEffect v2.0](https://huggingface.co/OpenMOSS-Team/MOSS-SoundEffect-v2.0) by the OpenMOSS team, on [MOSS-TTS](https://github.com/OpenMOSS/MOSS-TTS); the worker form of [TostAI-Sound-Effect-Studio](https://github.com/camenduru/TostAI-Sound-Effect-Studio)
