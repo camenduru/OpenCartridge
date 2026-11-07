@@ -95,6 +95,14 @@ the v1 magic names (`input_video`, `input_image`, `input_image1`, `start_image`,
 `input_audio`), and the UI also derives `inputs` from `ui: false` file
 parameters so old cartridges resolve the same way.
 
+A card that declares `input_image` plus optional `input_image2`, `input_image3`, …
+takes a variable number of selected layers: one to as many slots as it declares.
+Each selected image/video layer fills the next slot in selection order
+(`input_image` first, then `input_image2`, …), so a single card runs with one
+image or with several. A card that instead declares `input_image1..3` (or
+`input_image1..2`, or `start_image` + `end_image`) has a fixed count and
+dispatches only when exactly that many layers are selected.
+
 ### Returns (v2)
 
 ```json

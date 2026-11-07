@@ -1,0 +1,145 @@
+[
+  {
+    "home": true,
+    "id": "uniforge3d",
+    "name": "UniForge3D",
+    "description": "One or more unposed views in, a complete textured 3D asset out: select one or several image layers on the canvas and UniForge3D reconstructs the sides it sees and generates the ones it does not, returning a GLB with a baked PBR material.",
+    "category": "3d",
+    "icon": "Box",
+    "inputTypes": [
+      "image"
+    ],
+    "workerId": "",
+    "cost": "0",
+    "processingTime": "600",
+    "delay": "12000",
+    "overview": "UniForge3D treats reconstruction and generation as one problem: a shared anchor-guided space holds both the observed views and the unseen geometry, so a handful of unposed photos become a complete, consistently textured object. Select any number of image layers on the canvas (Ctrl/Cmd-click or shift-drag) and Run: the first selected layer becomes the first view and each further layer fills the next view slot, up to eight views. One image still works — it reconstructs the visible side and generates the rest — but two to eight views around the object give the best coverage, and the images do not need camera poses or an order. Extra view URLs can also be pasted into Extra Views. The worker cuts the object out with RMBG-2.0 (transparent PNGs are used as-is), predicts a sparse structure and a 512 mesh, refines it to 1024 with per-token view routing, then generates the PBR material and bakes it onto the mesh. The result is a GLB the canvas orbits in its 3D viewer. Optional Optimize runs gltfpack for a lighter, quantized mesh. Allow about 24 GB of VRAM; the first job after a restart also compiles the CUDA kernels.",
+    "divisible": 32,
+    "examples": {
+      "input": [
+        "https://raw.githubusercontent.com/camenduru/UniForge3D/main/assets/case01/001.png",
+        "https://raw.githubusercontent.com/camenduru/UniForge3D/main/assets/case01/002.png",
+        "https://raw.githubusercontent.com/camenduru/UniForge3D/main/assets/case01/003.png"
+      ],
+      "output": []
+    },
+    "parameters": [
+      {
+        "name": "job_id",
+        "type": "string",
+        "label": "Job ID",
+        "required": false,
+        "defaultValue": "",
+        "ui": false
+      },
+      {
+        "name": "input_image",
+        "type": "file",
+        "label": "View 1",
+        "required": true,
+        "ui": false,
+        "description": "First selected image layer."
+      },
+      {
+        "name": "input_image2",
+        "type": "file",
+        "label": "View 2",
+        "required": false,
+        "ui": false,
+        "description": "Second selected image layer, when more than one is selected."
+      },
+      {
+        "name": "input_image3",
+        "type": "file",
+        "label": "View 3",
+        "required": false,
+        "ui": false,
+        "description": "Third selected image layer, when more than two are selected."
+      },
+      {
+        "name": "input_image4",
+        "type": "file",
+        "label": "View 4",
+        "required": false,
+        "ui": false,
+        "description": "Fourth selected image layer."
+      },
+      {
+        "name": "input_image5",
+        "type": "file",
+        "label": "View 5",
+        "required": false,
+        "ui": false,
+        "description": "Fifth selected image layer."
+      },
+      {
+        "name": "input_image6",
+        "type": "file",
+        "label": "View 6",
+        "required": false,
+        "ui": false,
+        "description": "Sixth selected image layer."
+      },
+      {
+        "name": "input_image7",
+        "type": "file",
+        "label": "View 7",
+        "required": false,
+        "ui": false,
+        "description": "Seventh selected image layer."
+      },
+      {
+        "name": "input_image8",
+        "type": "file",
+        "label": "View 8",
+        "required": false,
+        "ui": false,
+        "description": "Eighth selected image layer."
+      },
+      {
+        "name": "input_images",
+        "type": "string",
+        "label": "Extra Views",
+        "required": false,
+        "defaultValue": "",
+        "ui": true,
+        "description": "Comma-separated URLs of additional unposed views around the object, on top of the selected layers."
+      },
+      {
+        "name": "seed",
+        "type": "number",
+        "label": "Seed",
+        "defaultValue": 42,
+        "ui": true,
+        "description": "0 randomizes."
+      },
+      {
+        "name": "optimize",
+        "type": "boolean",
+        "label": "Optimize Mesh",
+        "defaultValue": false,
+        "ui": true,
+        "description": "Simplify and quantize the GLB with gltfpack for a smaller, game-ready asset."
+      },
+      {
+        "name": "triangle_ratio",
+        "type": "slider",
+        "label": "Triangle Ratio",
+        "defaultValue": 0.25,
+        "min": 0.05,
+        "max": 1,
+        "step": 0.05,
+        "ui": true,
+        "description": "Fraction of the triangles kept when Optimize is on. 1 keeps the full mesh."
+      },
+      {
+        "name": "max_error",
+        "type": "number",
+        "label": "Max Error",
+        "defaultValue": 0.01,
+        "ui": false,
+        "description": "Simplification error allowance when Optimize is on."
+      }
+    ]
+  }
+]

@@ -88,6 +88,7 @@ import {
   extensionFor,
   isMeshInput,
   isMeshLayer,
+  multiImageSlots,
   paramControl,
   primaryInput,
   projectService,
@@ -285,6 +286,13 @@ const layerKindOf = (layer: Layer | null | undefined): string | null => {
     ? layer.type
     : null
 }
+
+/**
+ * The upload slots a cartridge declares for a multi-select input.
+ *
+ * `multiImageSlots` lives in lib/cartridge-schema.mjs so the binding rule is
+ * the same code the test suite exercises.
+ */
 
 type Tool = "select" | "pan"
 type Handle = "nw" | "ne" | "sw" | "se" | "n" | "e" | "s" | "w" | "rotate" | null
@@ -3729,6 +3737,9 @@ export function CanvasEditor() {
     const endImageParam = service.parameters.find((p: any) => p.name === 'end_image' && p.ui === false)
     const inputAudioParam = service.parameters.find((p: any) => p.name === 'input_audio' && p.ui === false)
     const inputVideoParam = service.parameters.find((p: any) => p.name === 'input_video' && p.ui === false)
+    // A card with `input_image` plus optional numbered slots takes any number
+    // of selected image layers between one and the slot count.
+    const viewSlots = multiImageSlots(service)
 
     // v2 cartridges declare which parameter takes the selected layer
     // (`inputs[].bind === 'primary'`). Catalogs written before that have no
@@ -3762,6 +3773,11 @@ export function CanvasEditor() {
       } else if (primarySelectedLayer && primarySelectedLayer.type === 'audio') {
         inputLayers = [primarySelectedLayer]
       }
+    } else if (viewSlots.length > 1) {
+      // Service takes one selected image/video layer per declared view slot
+      if (selectedLayers.length === 0 || selectedLayers.length > viewSlots.length) return
+      if (!selectedLayers.every(layer => layer.type === 'image' || layer.type === 'video')) return
+      inputLayers = selectedLayers
     } else if (inputImage1Param && inputImage2Param && inputImage3Param) {
       // Service requires 3 image/video layers
       if (selectedLayers.length !== 3 || !selectedLayers.every(layer => layer.type === 'image' || layer.type === 'video')) return
@@ -3886,7 +3902,10 @@ export function CanvasEditor() {
           const layer = inputLayers[i]
           let paramName: string
 
-          if (inputLayers.length === 3) {
+          if (viewSlots.length > 1) {
+            // One selected layer per declared slot: input_image, input_image2, …
+            paramName = viewSlots[i]
+          } else if (inputLayers.length === 3) {
             // For 3-layer services, use input_image1, input_image2, input_image3
             paramName = `input_image${i + 1}`
           } else if (inputLayers.length === 2) {
@@ -5962,6 +5981,7 @@ export function CanvasEditor() {
                     const endImageParam = selectedService.parameters.find((p: any) => p.name === 'end_image' && p.ui === false)
                     const inputAudioParam = selectedService.parameters.find((p: any) => p.name === 'input_audio' && p.ui === false)
                     const inputVideoParam = selectedService.parameters.find((p: any) => p.name === 'input_video' && p.ui === false)
+                    const viewSlots = multiImageSlots(selectedService)
 
                     if (inputAudioParam && inputAudioParam.required !== false) {
                       // Service requires 1 audio layer — an optional
@@ -5980,6 +6000,27 @@ export function CanvasEditor() {
                         return (
                           <div className="text-xs text-green-600 text-center mb-3">
                             1 video layer required for this service
+                          </div>
+                        )
+                      }
+                    } else if (viewSlots.length > 1) {
+                      // Multi-select: one selected image/video layer per slot
+                      if (selectedLayers.length === 0) {
+                        return (
+                          <div className="text-xs text-green-600 text-center mb-3">
+                            1 to {viewSlots.length} image/video layers for this service<br/>(hold Ctrl to select multiple layers)
+                          </div>
+                        )
+                      } else if (selectedLayers.length > viewSlots.length) {
+                        return (
+                          <div className="text-xs text-green-600 text-center mb-3">
+                            Up to {viewSlots.length} image/video layers for this service
+                          </div>
+                        )
+                      } else if (!selectedLayers.every(layer => layer.type === 'image' || layer.type === 'video')) {
+                        return (
+                          <div className="text-xs text-green-600 text-center mb-3">
+                            All selected layers must be image or video layers for this service
                           </div>
                         )
                       }
@@ -6066,6 +6107,7 @@ export function CanvasEditor() {
                       const endImageParam = selectedService.parameters.find((p: any) => p.name === 'end_image' && p.ui === false)
                       const inputAudioParam = selectedService.parameters.find((p: any) => p.name === 'input_audio' && p.ui === false)
                       const inputVideoParam = selectedService.parameters.find((p: any) => p.name === 'input_video' && p.ui === false)
+                      const viewSlots = multiImageSlots(selectedService)
 
                       // For services requiring audio input, need 1 audio layer
                       // — an optional (`required: false`) reference binds only
@@ -6075,6 +6117,9 @@ export function CanvasEditor() {
                       } else if (inputVideoParam) {
                         // For services requiring video input, need 1 video layer
                         if (!primarySelectedLayer || primarySelectedLayer.type !== 'video') return true
+                      } else if (viewSlots.length > 1) {
+                        if (selectedLayers.length === 0 || selectedLayers.length > viewSlots.length) return true
+                        if (!selectedLayers.every(layer => layer.type === 'image' || layer.type === 'video')) return true
                       } else if (inputImage1Param && inputImage2Param && inputImage3Param) {
                         if (selectedLayers.length !== 3 || !selectedLayers.every(layer => layer.type === 'image' || layer.type === 'video')) return true
                       } else if ((inputImage1Param && inputImage2Param) || (startImageParam && endImageParam)) {

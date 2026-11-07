@@ -30,6 +30,7 @@ import {
   isMeshLayer,
   kindFromUrl,
   missingCapabilities,
+  multiImageSlots,
   normalizeCatalog,
   normalizeService,
   paramControl,
@@ -106,10 +107,44 @@ test('frozen v1 catalogs dispatched the old way, without declaring anything', as
   }
 })
 
+test('a multi-select card takes one to N selected layers, one per slot', async () => {
+  const card = {
+    parameters: [
+      { name: 'input_image', type: 'file', ui: false },
+      { name: 'input_image2', type: 'file', ui: false },
+      { name: 'input_image10', type: 'file', ui: false },
+      { name: 'input_image3', type: 'file', ui: false },
+      { name: 'seed', type: 'number', ui: true },
+      // a visible field is not an upload slot
+      { name: 'input_image4', type: 'file', ui: true },
+    ],
+  }
+  // numeric order, not declaration order
+  assert.deepEqual(multiImageSlots(card), ['input_image', 'input_image2', 'input_image3', 'input_image10'])
+
+  // a lone `input_image` is the ordinary single-layer card
+  assert.deepEqual(multiImageSlots({ parameters: [card.parameters[0]] }), [])
+  // fixed-count cards keep their own rules
+  assert.deepEqual(multiImageSlots({
+    parameters: [
+      { name: 'input_image1', type: 'file', ui: false },
+      { name: 'input_image2', type: 'file', ui: false },
+    ],
+  }), [])
+  assert.deepEqual(multiImageSlots(null), [])
+
+  // the shipped UniForge3D card reads one to eight selected layers
+  const text = await fs.readFile(path.join(shipped, 'uniforge3d.json'), 'utf8')
+  const [uniforge] = parseCatalog(text).cartridges
+  assert.deepEqual(multiImageSlots(uniforge), [
+    'input_image', 'input_image2', 'input_image3', 'input_image4',
+    'input_image5', 'input_image6', 'input_image7', 'input_image8',
+  ])
+})
+
 // --------------------------------------------------------------------------- #
 // shipped catalogs
 // --------------------------------------------------------------------------- #
-
 test('shipped catalogs parse, and declared vocabulary is valid', async () => {
   const files = await jsonFiles(shipped)
   assert.ok(files.length > 0)
