@@ -92,7 +92,9 @@
         "https://raw.githubusercontent.com/camenduru/UniForge3D/main/assets/case01/002.png",
         "https://raw.githubusercontent.com/camenduru/UniForge3D/main/assets/case01/003.png"
       ],
-      "output": []
+      "output": [
+        "https://huggingface.co/camenduru/glb/resolve/main/uniforge3d-2026-11-07-05-01-27-133465b3-928e-4007-b9aa-6684e1c568e7.glb-OpenCartridge-1794028481855.glb"
+      ]
     },
     "parameters": [
       {
