@@ -102,12 +102,31 @@ Requires an NVIDIA GPU (~24 GB VRAM is enough for the current workers). The firs
 
 ## ❤️ Credits
 
+**Platform**
+
 - [TostUI](https://github.com/camenduru/TostUI) by [camenduru](https://x.com/camenduru) — application code, cartridge protocol and worker dockers
 - [ComfyUI](https://github.com/comfy-org/comfyui) — the backend inside most workers
 - [MinIO](https://github.com/minio/minio) — the S3-compatible object storage that ships inside the container
-- [CorridorKey 2.0](https://github.com/camenduru/CorridorKey2.0) — matting by Zachary Harris with Corridor Digital
-- [Idol](https://github.com/speridlabs/idol-sdk) — one image to 3D gaussian splat, by Speridlabs
-- [ComfyUI-Idol](https://github.com/Nynxz/ComfyUI-Idol) — the ComfyUI node pack and converted weights the worker runs
+- [RunPod](https://github.com/runpod/runpod-python) — the local serverless job API every worker answers
+- [Blender](https://www.blender.org/) — headless mesh work for the GLB to VRM and UniMate workers
+
+**Model cartridges** — in the order they appear above
+
+- **3x3 Sprite Sheet / Animation** — the sheet edit runs [Qwen Image 2.1](https://huggingface.co/Comfy-Org/Qwen-Image-2.1) by the Qwen team; the walk cycle runs [MiniMax H3](https://huggingface.co/Comfy-Org/MiniMax-H3) by MiniMax, with the 3-step turbo LoRA by [Kijai](https://huggingface.co/Kijai/MiniMax-H3_comfy)
+- **Loop Hero Style** — [Krea 2 Turbo](https://huggingface.co/Comfy-Org/Krea-2) by Krea, with the HQ detail LoRA from [lilpotat](https://huggingface.co/lilpotat/lora) and the Loop Hero style LoRA from the Civitai community
+- **CorridorKey Image / Video** — [CorridorKey 2.0](https://github.com/camenduru/CorridorKey2.0) matting by Zachary Harris with Corridor Digital, built on [C-RADIO](https://github.com/NVlabs/RADIO) (NVIDIA), [MoGe](https://github.com/microsoft/MoGe) (Microsoft) and [RVM](https://github.com/google-deepmind/representations4d) (Google DeepMind)
+- **Idol 3D** — [Idol](https://huggingface.co/speridlabs/idol) by [Speridlabs](https://speridlabs.com/research/idol) on the [TripoSplat](https://github.com/VAST-AI-Research/TripoSplat) architecture, with the [ComfyUI-Idol](https://github.com/Nynxz/ComfyUI-Idol) node pack and converted weights
+- **SUPRA-Tex** — [SUPRA-Tex](https://huggingface.co/spaces/UniLat3D/Supra-Tex) by UniLat3D, on [Pixal3D](https://huggingface.co/TencentARC/Pixal3D) (Tencent ARC), [TRELLIS.2](https://huggingface.co/microsoft/TRELLIS.2-4B) and [MoGe-2](https://huggingface.co/Ruicheng/moge-2-vitl-normal) (Microsoft), [DINOv3](https://huggingface.co/camenduru/dinov3-vitl16-pretrain-lvd1689m) (Meta) and [Qwen-Image 2.1](https://huggingface.co/Qwen/Qwen-Image-2.1)
+- **SkinTokens Rig** — [TokenRig / SkinTokens](https://zjp-shadow.github.io/works/SkinTokens/) by the SkinTokens authors: one token sequence for the skeleton and the skinning weights
+- **UniMate Motion** — [UniMate](https://linzhanmou.com/unimate/) by the UniMate team: text-to-animation for arbitrary skeletons (MIT code, CC BY-NC 4.0 checkpoints)
+- **GLB to VRM** — [GLB2VRM](https://github.com/camenduru/GLB2VRM) and the VRMify conversion chain (GPL-3.0), against the [VRM](https://vrm.dev/) spec
+- **VRMExMR** — [VRMExMR](https://github.com/camenduru/VRMExMR) and ExMR motion reconstruction; SMPL-X, MANO, SAM 3D Body, Sapiens2 and YOLO each carry their own licence — see that repository's `THIRD_PARTY_NOTICES.md`
+- **YuE2 Text to Music** — [YuE](https://github.com/multimodal-art-projection/YuE) by the Multimodal Art Projection team, weights packaged by [Comfy-Org](https://huggingface.co/Comfy-Org/YuE2)
+- **Breeze TTS Plain / Design / Clone / Direct** — [Breeze TTS 2](https://huggingface.co/BreezeBlue/Breeze-TTS-2) by [BreezeBlue](https://github.com/breezeblue-ai/breeze-tts); the worker form of [TostAI-Voice-Studio](https://github.com/camenduru/TostAI-Voice-Studio). Research / non-commercial use only
+- **MOSS Sound Effect** — [MOSS-SoundEffect v2.0](https://huggingface.co/OpenMOSS-Team/MOSS-SoundEffect-v2.0) by the OpenMOSS team, on [MOSS-TTS](https://github.com/OpenMOSS/MOSS-TTS); the worker form of [TostAI-Sound-Effect-Studio](https://github.com/camenduru/TostAI-Sound-Effect-Studio)
+
+Each model keeps its own licence. Several cartridges are non-commercial (CorridorKey, Breeze TTS, UniMate, VRMExMR
+and its dependencies) — check the linked model card before using their output commercially.
 
 ## 📄 License
 
