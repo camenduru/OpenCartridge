@@ -1,0 +1,91 @@
+[
+  {
+    "home": true,
+    "id": "kimodo",
+    "name": "Kimodo",
+    "description": "Text in, VRM Animation out: describe the motion — walk, wave, sit down, dance — and Kimodo generates a .vrma you can play on any VRM avatar.",
+    "category": "3d",
+    "icon": "Box",
+    "inputTypes": [],
+    "workerId": "",
+    "cost": "0",
+    "processingTime": "180",
+    "delay": "12000",
+    "overview": "Kimodo (NVIDIA) is a text-driven motion diffusion model trained on the SOMA skeleton: it turns a written description into human motion, keeping the feet planted and returning motion in a Y-up, meter-scale T-pose frame that already matches the VRM humanoid. This cartridge hands the model's own output to Kimodo's exporter, which maps the SOMA joints onto the VRM humanoid bones, composes the two neck joints, keeps quaternion signs continuous and scales the hips translation — so the .vrma plays on any avatar without retargeting. Write the motion as one or more sentences: each sentence becomes a segment of the clip, and the segments are generated in order and stitched with short blended transitions. Duration is the length of each segment. Optional seed, diffusion steps and the checkpoint are hidden; the defaults match the project's CLI. The first job after a restart loads the checkpoint (a few minutes) before generating.",
+    "divisible": 32,
+    "returns": {
+      "type": "model/gltf-binary",
+      "ext": "vrma",
+      "layer": "3d"
+    },
+    "examples": {
+      "input": [
+        "https://huggingface.co/camenduru/glb/resolve/main/kimodo-prompt.txt"
+      ],
+      "output": [
+        "https://huggingface.co/camenduru/glb/resolve/main/kimodo.vrma"
+      ]
+    },
+    "parameters": [
+      {
+        "name": "job_id",
+        "type": "string",
+        "label": "Job ID",
+        "required": false,
+        "defaultValue": "",
+        "ui": false
+      },
+      {
+        "name": "prompt",
+        "type": "string",
+        "label": "Motion Prompt",
+        "required": true,
+        "defaultValue": "A person walks forward at a steady pace. Then they stop and wave with their right hand.",
+        "ui": true,
+        "description": "What the character does. Each sentence becomes its own segment, generated in order and stitched together."
+      },
+      {
+        "name": "duration",
+        "type": "slider",
+        "label": "Duration (seconds)",
+        "defaultValue": 5,
+        "min": 1,
+        "max": 10,
+        "step": 0.5,
+        "ui": true,
+        "description": "Length of each segment, in seconds."
+      },
+      {
+        "name": "seed",
+        "type": "number",
+        "label": "Seed",
+        "defaultValue": 42,
+        "ui": false
+      },
+      {
+        "name": "diffusion_steps",
+        "type": "number",
+        "label": "Diffusion Steps",
+        "defaultValue": 100,
+        "ui": false,
+        "description": "DDIM denoising steps; more is slower and cleaner."
+      },
+      {
+        "name": "num_transition_frames",
+        "type": "number",
+        "label": "Transition Frames",
+        "defaultValue": 5,
+        "ui": false,
+        "description": "Blended frames between two segments."
+      },
+      {
+        "name": "model",
+        "type": "string",
+        "label": "Model",
+        "defaultValue": "kimodo-soma-rp",
+        "ui": false,
+        "description": "Kimodo checkpoint (kimodo-soma-rp resolves to the newest installed version)."
+      }
+    ]
+  }
+]

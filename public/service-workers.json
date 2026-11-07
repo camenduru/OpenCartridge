@@ -313,5 +313,29 @@
         "s3_bucket_folder": "output"
       }
     }
+  },
+  {
+    "id": "kimodo",
+    "name": "Kimodo",
+    "catalog": "services/kimodo.json",
+    "apiUrl": "http://host.docker.internal:8013",
+    "uploadUrl": "http://localhost:9000",
+    "workerUploadUrl": "http://host.docker.internal:9000",
+    "container": {
+      "name": "kimodo-cartridge",
+      "image": "camenduru/kimodo-cartridge:latest",
+      "port": 8013,
+      "hostPort": 8013,
+      "gpus": true,
+      "command": ["python", "/app/worker_runpod.py", "--rp_serve_api", "--rp_api_port", "8013", "--rp_api_host", "0.0.0.0", "--rp_log_level", "INFO"],
+      "env": {
+        "s3_access_key_id": "${s3_access_key_id}",
+        "s3_secret_access_key": "${s3_secret_access_key}",
+        "s3_endpoint_url": "http://host.docker.internal:9000",
+        "s3_region_name": "us-east-1",
+        "s3_bucket_name": "tost",
+        "s3_bucket_folder": "output"
+      }
+    }
   }
 ]
