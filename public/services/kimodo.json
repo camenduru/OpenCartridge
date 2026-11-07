@@ -18,6 +18,7 @@
       "ext": "vrma",
       "layer": "3d"
     },
+    "thumbnail": "https://huggingface.co/camenduru/glb/resolve/main/kimodo-thumbnail.png",
     "examples": {
       "input": [
         "https://huggingface.co/camenduru/glb/resolve/main/kimodo-prompt.txt"
