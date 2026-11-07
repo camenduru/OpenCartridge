@@ -13,7 +13,7 @@
     "cost": "0",
     "processingTime": "600",
     "delay": "12000",
-    "overview": "UniForge3D treats reconstruction and generation as one problem: a shared anchor-guided space holds both the observed views and the unseen geometry, so a handful of unposed photos become a complete, consistently textured object. Select any number of image layers on the canvas (Ctrl/Cmd-click or shift-drag) and Run: the first selected layer becomes the first view and each further layer fills the next view slot, up to eight views. One image still works — it reconstructs the visible side and generates the rest — but two to eight views around the object give the best coverage, and the images do not need camera poses or an order. Extra view URLs can also be pasted into Extra Views. The worker cuts the object out with RMBG-2.0 (transparent PNGs are used as-is), predicts a sparse structure and a 512 mesh, refines it to 1024 with per-token view routing, then generates the PBR material and bakes it onto the mesh. The result is a GLB the canvas orbits in its 3D viewer. Optional Optimize runs gltfpack for a lighter, quantized mesh. Allow about 24 GB of VRAM; the first job after a restart also compiles the CUDA kernels.",
+    "overview": "UniForge3D treats reconstruction and generation as one problem: a shared anchor-guided space holds both the observed views and the unseen geometry, so a handful of unposed photos become a complete, consistently textured object. Select any number of image layers on the canvas (Ctrl/Cmd-click or shift-drag) and Run: the first selected layer becomes the first view and each further layer fills the next view slot, up to eight views. One image still works — it reconstructs the visible side and generates the rest — but two to eight views around the object give the best coverage, and the images do not need camera poses or an order. The worker cuts the object out with RMBG-2.0 (transparent PNGs are used as-is), predicts a sparse structure and a 512 mesh, refines it to 1024 with per-token view routing, then generates the PBR material and bakes it onto the mesh. The result is a GLB the canvas orbits in its 3D viewer. Optional Optimize runs gltfpack for a lighter, quantized mesh. Allow about 24 GB of VRAM; the first job after a restart also compiles the CUDA kernels.",
     "divisible": 32,
     "inputs": [
       {
@@ -166,15 +166,6 @@
         "required": false,
         "ui": false,
         "description": "Eighth selected image layer."
-      },
-      {
-        "name": "input_images",
-        "type": "string",
-        "label": "Extra Views",
-        "required": false,
-        "defaultValue": "",
-        "ui": true,
-        "description": "Comma-separated URLs of additional unposed views around the object, on top of the selected layers."
       },
       {
         "name": "seed",
