@@ -13,7 +13,7 @@ Three artifacts, in two repositories:
 
 | Artifact | Where | Purpose |
 |---|---|---|
-| **Worker image** | `Dockerfile` + `worker_runpod.py`, kept outside this repository → `camenduru/<id>` | Runs the model, answers the job API, uploads results |
+| **Worker image** | `Dockerfile` + `worker_runpod.py`, kept outside this repository → `camenduru/<id>-cartridge` | Runs the model, answers the job API, uploads results |
 | **Catalog entry** | `OpenCartridge/public/services/<id>.json` | What the UI shows: parameters, examples, result type |
 | **Registry entry** | `OpenCartridge/public/service-workers.json` | Which URL/port/container the cartridge belongs to |
 
@@ -295,7 +295,8 @@ The format is versioned and additive; read `docs/cartridge-schema.md` before inv
 
 Ports are assigned by hand and must not collide: `8000` 3x3-sprite-sheet, `8001` loop-hero-style, `8002`
 corridorkey, `8003` idol, `8004` breeze-tts, `8005` yue2, `8006` moss-soundeffect, `8007` supra-tex, `8008`
-skintokens, `8009` unimate, `8010` glb2vrm, `8011` vrmexmr, `8012` uniforge3d, `8013` kimodo. **Next free port is 8014.**
+skintokens, `8009` unimate, `8010` glb2vrm, `8011` vrmexmr, `8012` uniforge3d, `8013` kimodo,
+`8014` minimax-h3-image-edit. **Next free port is 8015.**
 
 ```json
 {
@@ -306,8 +307,8 @@ skintokens, `8009` unimate, `8010` glb2vrm, `8011` vrmexmr, `8012` uniforge3d, `
   "uploadUrl": "http://localhost:9000",
   "workerUploadUrl": "http://host.docker.internal:9000",
   "container": {
-    "name": "my-worker",
-    "image": "camenduru/my-worker:latest",
+    "name": "my-worker-cartridge",
+    "image": "camenduru/my-worker-cartridge:latest",
     "port": 8004,
     "hostPort": 8004,
     "gpus": true,
@@ -326,6 +327,8 @@ skintokens, `8009` unimate, `8010` glb2vrm, `8011` vrmexmr, `8012` uniforge3d, `
 ```
 
 - `id` is the join key: `/api/ai-services` stamps it on every cartridge as `workerId`.
+- **All Docker image and container names must end with `-cartridge`** — `camenduru/<id>-cartridge:latest` for the
+  image and `"<id>-cartridge"` for `container.name`. The cartridge `id` itself stays unsuffixed.
 - `port` = inside the container, `hostPort` = published. They may differ (loop-hero-style is 8000 → 8001).
 - `ulimits` mirrors `docker run --ulimit name=value` (soft and hard both set), e.g. `{"memlock": 67108864}`.
 - `extraHosts` mirrors `docker run --add-host`. The app adds `host.docker.internal:host-gateway` to every worker it
@@ -341,9 +344,9 @@ skintokens, `8009` unimate, `8010` glb2vrm, `8011` vrmexmr, `8012` uniforge3d, `
 
 ```bash
 # 1. image builds, and the container comes up healthy
-cd <worker source> && docker build -t camenduru/my-worker .
-docker run -d --name my-worker --gpus all -p 8004:8004 -e s3_access_key_id=tost … camenduru/my-worker
-docker ps --filter name=my-worker        # (healthy)
+cd <worker source> && docker build -t camenduru/my-worker-cartridge .
+docker run -d --name my-worker-cartridge --gpus all -p 8004:8004 -e s3_access_key_id=tost … camenduru/my-worker-cartridge
+docker ps --filter name=my-worker-cartridge        # (healthy)
 
 # 2. the handler answers (from the HOST: 127.0.0.1. host.docker.internal only
 #    means something inside a container)
@@ -403,7 +406,8 @@ When a new catalog ships, **add** a frozen copy under `tests/fixtures/cartridges
 - [ ] Dockerfile pins torch, installs runpod, checks imports with `--cpu`, exposes one port
 - [ ] catalogue entry: minimal UI params, `inputs`, `returns`, public example URLs
 - [ ] registry entry: correct port/hostPort, `${ENV}` s3 block, `container` spec
-- [ ] port not already taken (next free: 8014)
+- [ ] Docker image and container names end with `-cartridge`
+- [ ] port not already taken (next free: 8015)
 - [ ] built, ran, `/run` → `/status` → artifact fetched
 - [ ] through the app: `/api/ai-services`, `/api/workers`, `/api/run`, layer appears
 - [ ] `npm test` green; fixture added if a catalog was added

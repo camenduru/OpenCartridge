@@ -337,5 +337,30 @@
         "s3_bucket_folder": "output"
       }
     }
+  },
+  {
+    "id": "minimax-h3-image-edit",
+    "name": "MiniMax H3 Image Edit",
+    "catalog": "services/minimax-h3-image-edit.json",
+    "apiUrl": "http://host.docker.internal:8014",
+    "uploadUrl": "http://localhost:9000",
+    "workerUploadUrl": "http://host.docker.internal:9000",
+    "container": {
+      "name": "minimax-h3-image-edit-cartridge",
+      "image": "camenduru/minimax-h3-image-edit-cartridge:latest",
+      "port": 8014,
+      "hostPort": 8014,
+      "gpus": true,
+      "ulimits": { "memlock": 67108864 },
+      "command": ["python", "worker_runpod.py", "--rp_serve_api", "--rp_api_port", "8014", "--rp_api_host", "0.0.0.0", "--rp_log_level", "DEBUG", "--rp_debugger"],
+      "env": {
+        "s3_access_key_id": "${s3_access_key_id}",
+        "s3_secret_access_key": "${s3_secret_access_key}",
+        "s3_endpoint_url": "http://host.docker.internal:9000",
+        "s3_region_name": "us-east-1",
+        "s3_bucket_name": "tost",
+        "s3_bucket_folder": "output"
+      }
+    }
   }
 ]

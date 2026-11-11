@@ -72,6 +72,7 @@ container, points it at the built-in MinIO and starts it. No `docker run`, no en
 
 - **3x3 Sprite Sheet** *(image)* — build a 3x3 turnaround sprite sheet (eight isometric facings, empty center box, transparent background) from one character reference
 - **3x3 Sprite Sheet Animation** *(video)* — animate an existing 3x3 sprite sheet: all eight figures walk in place, in their own cell, as one loopable clip with audio
+- **MiniMax H3 Image Edit** *(image)* — edit a reference image with MiniMax H3 Image; the default prompt rewrites it as a 3x3 turnaround sprite sheet
 - **Loop Hero Style** *(image)* — turn a character reference into a Loop Hero pixel-art render: dithered dark-fantasy palette, crisp pixel edges, colors matched back to the reference
 - **CorridorKey Image** *(image)* — pull a clean alpha matte out of a still frame with CorridorKey 2.0: native-resolution keying, no green screen, no rotoscoping
 - **CorridorKey Video** *(video)* — key a whole clip: drop a video layer and CorridorKey 2.0 returns the animated matte or a transparent cutout at native resolution
@@ -115,6 +116,7 @@ Requires an NVIDIA GPU (~24 GB VRAM is enough for the current workers). The firs
 **Model cartridges** — in the order they appear above
 
 - **3x3 Sprite Sheet / Animation** — the sheet edit runs [Qwen Image 2.1](https://huggingface.co/Comfy-Org/Qwen-Image-2.1) by the Qwen team; the walk cycle runs [MiniMax H3](https://huggingface.co/Comfy-Org/MiniMax-H3) by MiniMax, with the 3-step turbo LoRA by [Kijai](https://huggingface.co/Kijai/MiniMax-H3_comfy)
+- **MiniMax H3 Image Edit** — [MiniMax H3 Image](https://huggingface.co/Comfy-Org/MiniMax-H3-Image) by MiniMax, using the 32B Qwen3-VL text encoder from [MiniMax H3](https://huggingface.co/Comfy-Org/MiniMax-H3)
 - **Loop Hero Style** — [Krea 2 Turbo](https://huggingface.co/Comfy-Org/Krea-2) by Krea, with the [Loop Hero style LoRA](https://civitai.com/models/1349874/loop-hero-game-styles) from the Civitai community
 - **CorridorKey Image / Video** — [CorridorKey 2.0](https://github.com/camenduru/CorridorKey2.0) matting by Zachary Harris with Corridor Digital, built on [C-RADIO](https://github.com/NVlabs/RADIO) (NVIDIA), [MoGe](https://github.com/microsoft/MoGe) (Microsoft) and [RVM](https://github.com/google-deepmind/representations4d) (Google DeepMind)
 - **Idol 3D** — [Idol](https://huggingface.co/speridlabs/idol) by [Speridlabs](https://speridlabs.com/research/idol) on the [TripoSplat](https://github.com/VAST-AI-Research/TripoSplat) architecture, with the [ComfyUI-Idol](https://github.com/Nynxz/ComfyUI-Idol) node pack and converted weights

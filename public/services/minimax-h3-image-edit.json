@@ -1,0 +1,163 @@
+[
+  {
+    "home": true,
+    "id": "minimax-h3-image-edit",
+    "name": "MiniMax H3 Image Edit",
+    "description": "Edit a reference image with MiniMax H3 Image at a fixed 1024x1024 or 2048x2048 size, or let Input Image keep the workflow's own sizing. The default prompt rewrites it as a 3x3 turnaround sprite sheet.",
+    "category": "image",
+    "icon": "Image",
+    "inputTypes": [
+      "image"
+    ],
+    "workerId": "",
+    "cost": "0.28",
+    "processingTime": "90",
+    "delay": "12000",
+    "overview": "MiniMax H3 Image is an instruction-driven image editor: the reference image and the prompt go into MiniMaxH3ImageConditioning, which writes the reference into the H3 latent space and returns the matching empty latent for the sampler. Pick a fixed 1024x1024 or 2048x2048 output, or choose Input Image to keep the workflow's 4 MP sizing from the reference. The worker samples 6 steps at CFG 1 with euler/simple and returns a PNG. The default prompt is the 3x3 turnaround sheet from the workflow: eight identical figures at 45-degree facings, the center box empty and the background transparent. The rest of the graph (sampler, scheduler, denoise, reserve VRAM) is hidden with the workflow's values.",
+    "divisible": 32,
+    "inputs": [
+      {
+        "name": "input_image",
+        "accepts": [
+          "image/*"
+        ],
+        "bind": "primary",
+        "required": true
+      }
+    ],
+    "returns": {
+      "type": "image/png",
+      "ext": "png",
+      "layer": "image"
+    },
+    "examples": {
+      "input": [
+        "https://examples.tost.ai/1793138010949.jpg"
+      ],
+      "output": [
+        "https://examples.tost.ai/1793150564865.jpg"
+      ]
+    },
+    "parameters": [
+      {
+        "name": "job_id",
+        "type": "string",
+        "label": "Job ID",
+        "required": false,
+        "defaultValue": "",
+        "ui": false
+      },
+      {
+        "name": "input_image",
+        "type": "file",
+        "label": "Reference Image",
+        "required": true,
+        "ui": false
+      },
+      {
+        "name": "prompt",
+        "type": "string",
+        "label": "Edit Prompt",
+        "required": true,
+        "defaultValue": "Static sheet and walk video, both rewritten as one square image: a 3×3 grid of equal boxes, center box empty, each figure isolated in its own cell.\nTurnaround\nOne polished square game-asset sheet. A clearly organized 3×3 grid of nine equal boxes, thin even gutters, center box empty. Transparent background. No floor, no tiles, no shadows, no labels, no text.\nEach outer box holds one identical copy of the subject, same scale, same line weight, centered in the cell, feet above the bottom edge, no overlap into the gutter. Camera is a fixed top-down isometric angle, about 35 degrees above the horizon, the same camera in every box. Bodies upright. Flat even lighting.\n\nTop-left box: back-left three-quarter, 135 degrees. Mostly back and left shoulder, crown visible, a sliver of cheek, face almost hidden.\nTop-center box: pure back, 180 degrees. Full rear of the head and torso, no face, shoulders square away.\nTop-right box: back-right three-quarter, 225 degrees. Mirror of the top-left.\nMiddle-left box: isometric left side, 90 degrees. Only the left side shown, one eye, nose and mouth in silhouette. Raised-camera side view, not a flat profile.\nCenter box: empty. Transparent, no figure, no mark.\nMiddle-right box: isometric right side, 270 degrees. Mirror of the middle-left.\nBottom-left box: front-left three-quarter, 45 degrees. Left side more open, face still readable, gaze along the facing.\nBottom-center box: pure front, 0 degrees. Face fully toward the camera, both shoulders equal, chest square, crown slightly visible.\nBottom-right box: front-right three-quarter, 315 degrees. Mirror of the bottom-left.\n\nAll eight share one design, one palette, one outline weight. Feet point along each facing. No ground plane, no contact shadows, no arrows, no captions.",
+        "ui": true
+      },
+      {
+        "name": "seed",
+        "type": "number",
+        "label": "Seed",
+        "defaultValue": 0,
+        "ui": true
+      },
+      {
+        "name": "steps",
+        "type": "slider",
+        "label": "Steps",
+        "defaultValue": 6,
+        "min": 1,
+        "max": 20,
+        "step": 1,
+        "ui": true
+      },
+      {
+        "name": "size",
+        "type": "select",
+        "label": "Size",
+        "defaultValue": "2048x2048",
+        "options": [
+          "Input Image",
+          "1024x1024",
+          "2048x2048"
+        ],
+        "ui": true,
+        "description": "Input Image keeps the workflow's 4 MP sizing; a fixed size renders exactly that square."
+      },
+      {
+        "name": "megapixels",
+        "type": "slider",
+        "label": "Image Size (MP)",
+        "defaultValue": 4,
+        "min": 1,
+        "max": 8,
+        "step": 0.5,
+        "ui": false
+      },
+      {
+        "name": "cfg",
+        "type": "slider",
+        "label": "CFG",
+        "defaultValue": 1,
+        "min": 0,
+        "max": 10,
+        "step": 0.1,
+        "ui": false
+      },
+      {
+        "name": "sampler_name",
+        "type": "select",
+        "label": "Sampler",
+        "defaultValue": "euler",
+        "options": [
+          "euler",
+          "res_multistep"
+        ],
+        "ui": false
+      },
+      {
+        "name": "scheduler",
+        "type": "select",
+        "label": "Scheduler",
+        "defaultValue": "simple",
+        "options": [
+          "simple",
+          "normal"
+        ],
+        "ui": false
+      },
+      {
+        "name": "denoise",
+        "type": "slider",
+        "label": "Denoise",
+        "defaultValue": 1,
+        "min": 0,
+        "max": 1,
+        "step": 0.05,
+        "ui": false
+      },
+      {
+        "name": "resolution_steps",
+        "type": "number",
+        "label": "Resolution Step",
+        "defaultValue": 32,
+        "ui": false
+      },
+      {
+        "name": "reserve_vram",
+        "type": "number",
+        "label": "Reserve VRAM (GB)",
+        "defaultValue": 6,
+        "ui": false
+      }
+    ]
+  }
+]
