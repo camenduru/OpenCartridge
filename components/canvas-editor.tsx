@@ -93,6 +93,7 @@ import {
   primaryInput,
   projectService,
   resultKind,
+  resultLayerSize,
   visibleCartridges,
 } from "@/lib/cartridge-schema.mjs"
 import { useTheme } from 'next-themes'
@@ -4477,16 +4478,15 @@ export function CanvasEditor() {
                   inputLayer = foundJob.inputLayer
                 }
 
-                // Determine target dimensions based on custom size setting
-                let targetWidth: number, targetHeight: number
-                if (service?.custom_size) {
-                  // When custom size is enabled, use the actual result video dimensions
-                  targetWidth = video.videoWidth
-                  targetHeight = video.videoHeight
-                } else {
-                  targetWidth = inputLayer ? inputLayer.width : video.videoWidth
-                  targetHeight = inputLayer ? inputLayer.height : video.videoHeight
-                }
+                // A declared output size wins over the input layer: a fixed
+                // 2048x2048 job must land as a 2048x2048 layer (and export).
+                const resultSize = resultLayerSize(
+                  service,
+                  { width: video.videoWidth, height: video.videoHeight },
+                  inputLayer ? { width: inputLayer.width, height: inputLayer.height } : null
+                )
+                const targetWidth = resultSize.width
+                const targetHeight = resultSize.height
 
                 const newLayer: Layer = {
                   id: `layer-ai-${Date.now()}`,
@@ -4923,16 +4923,15 @@ export function CanvasEditor() {
                 inputLayer = foundJob.inputLayer
               }
 
-              // Determine target dimensions based on custom size setting
-              let targetWidth: number, targetHeight: number
-              if (service?.custom_size || service?.upscale_size) {
-                // When custom size is enabled, use the actual result image dimensions
-                targetWidth = img.width
-                targetHeight = img.height
-              } else {
-                targetWidth = inputLayer ? inputLayer.width : img.width
-                targetHeight = inputLayer ? inputLayer.height : img.height
-              }
+              // A declared output size wins over the input layer: a fixed
+              // 2048x2048 job must land as a 2048x2048 layer (and export).
+              const resultSize = resultLayerSize(
+                service,
+                { width: img.width, height: img.height },
+                inputLayer ? { width: inputLayer.width, height: inputLayer.height } : null
+              )
+              const targetWidth = resultSize.width
+              const targetHeight = resultSize.height
 
               const newLayer: Layer = {
                 id: `layer-ai-${Date.now()}`,

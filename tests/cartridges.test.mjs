@@ -37,7 +37,9 @@ import {
   parseCatalog,
   primaryInput,
   projectService,
+  fixedOutputSize,
   resultKind,
+  resultLayerSize,
   schemaVersionOf,
   visibleCartridges,
 } from '../lib/cartridge-schema.mjs'
@@ -379,4 +381,108 @@ test('without Docker state nothing is hidden', () => {
   assert.equal(visibleCartridges(services, {}).length, 2)
   assert.equal(visibleCartridges(services, undefined).length, 2)
   assert.deepEqual(visibleCartridges(undefined, {}), [])
+})
+
+// --------------------------------------------------------------------------- #
+// result layer size
+// --------------------------------------------------------------------------- #
+
+async function minimaxService() {
+  const [catalog] = JSON.parse(await fs.readFile(path.join(shipped, 'minimax-h3-image-edit.json'), 'utf8'))
+  return projectService(catalog)
+}
+
+test('a fixed 2048x2048 selection lands as a 2048x2048 layer, not the input size', async () => {
+  const service = await minimaxService()
+  // "Max Dimension" capped the reference layer at 1024; the worker still
+  // returns exactly the selected square.
+  const input = { width: 1024, height: 1024 }
+  const result = { width: 2048, height: 2048 }
+
+  assert.deepEqual(fixedOutputSize({ ...service, size: '2048x2048' }), result)
+  assert.deepEqual(resultLayerSize({ ...service, size: '2048x2048' }, result, input), result)
+
+  // The selection is authoritative even if the worker's PNG disagrees: the
+  // layer (and therefore the export) is exactly what the user picked. Without
+  // this, disabling the fixed-size rule still passed by falling through to the
+  // real result pixels.
+  assert.deepEqual(resultLayerSize({ ...service, size: '2048x2048' }, { width: 1024, height: 1024 }, input), result)
+})
+
+test('1024x1024 is honoured too, and a bigger input does not win', async () => {
+  const service = await minimaxService()
+  const result = { width: 1024, height: 1024 }
+  assert.deepEqual(resultLayerSize({ ...service, size: '1024x1024' }, result, { width: 2048, height: 2048 }), result)
+  assert.deepEqual(resultLayerSize({ ...service, size: '1024x1024' }, { width: 2048, height: 2048 }, { width: 2048, height: 2048 }), result)
+})
+
+test("Input Image uses the worker's real dimensions", async () => {
+  const service = await minimaxService()
+  const result = { width: 1536, height: 2048 }
+  assert.equal(fixedOutputSize({ ...service, size: 'Input Image' }), null)
+  assert.deepEqual(resultLayerSize({ ...service, size: 'Input Image' }, result, { width: 1024, height: 1024 }), result)
+})
+
+test('cartridges without a size control keep the old input-layer rule', () => {
+  const service = { parameters: [{ name: 'prompt' }] }
+  const input = { width: 1024, height: 1024 }
+  const result = { width: 2048, height: 2048 }
+  assert.equal(fixedOutputSize(service), null)
+  assert.deepEqual(resultLayerSize(service, result, input), input)
+  assert.deepEqual(resultLayerSize(service, result, null), result)
+  // A stray size field must not change anything unless the parameter is declared.
+  assert.deepEqual(resultLayerSize({ ...service, size: '2048x2048' }, result, input), input)
+})
+
+test('custom_size / upscale_size legacy opt-out still uses the real pixels', () => {
+  const result = { width: 2048, height: 2048 }
+  const input = { width: 1024, height: 1024 }
+  assert.deepEqual(resultLayerSize({ custom_size: true }, result, input), result)
+  assert.deepEqual(resultLayerSize({ upscale_size: true }, result, input), result)
+})
+
+test('the canvas result branches are wired to the shared size rule', async () => {
+  const source = await fs.readFile(path.join(root, 'components', 'canvas-editor.tsx'), 'utf8')
+
+  const imageStart = source.indexOf('// Handle image result (existing logic)')
+  assert.notEqual(imageStart, -1, 'image result branch marker is missing')
+  const imageEnd = source.indexOf('img.onerror = () => {', imageStart)
+  assert.notEqual(imageEnd, -1, 'image result branch has no end marker')
+  const image = source.slice(imageStart, imageEnd)
+
+  for (const statement of [
+    'const resultSize = resultLayerSize(',
+    'service,',
+    '{ width: img.width, height: img.height },',
+    'inputLayer ? { width: inputLayer.width, height: inputLayer.height } : null',
+    'const targetWidth = resultSize.width',
+    'const targetHeight = resultSize.height',
+    'width: targetWidth,',
+    'height: targetHeight,',
+  ]) {
+    assert.ok(image.includes(statement), `image result branch is missing: ${statement}`)
+  }
+  assert.ok(!image.includes('targetWidth = inputLayer ? inputLayer.width : img.width'),
+    'the input-layer sizing rule came back')
+
+  // Not `video.onloadeddata`: the paste/drop handlers use that too. Anchor on
+  // the result handler's own marker so the window cannot silently be a
+  // different function.
+  const videoStart = source.indexOf('// Handle video result - fetch and create blob URL for seekability')
+  assert.notEqual(videoStart, -1, 'video result branch marker is missing')
+  const videoEnd = source.indexOf('const newLayer: Layer = {', videoStart)
+  assert.notEqual(videoEnd, -1, 'video result branch has no end marker')
+  const video = source.slice(videoStart, videoEnd)
+  for (const statement of [
+    'const resultSize = resultLayerSize(',
+    '{ width: video.videoWidth, height: video.videoHeight },',
+    'const targetWidth = resultSize.width',
+    'const targetHeight = resultSize.height',
+  ]) {
+    assert.ok(video.includes(statement), `video result branch is missing: ${statement}`)
+  }
+  assert.ok(!video.includes('targetWidth = inputLayer ? inputLayer.width : video.videoWidth'),
+    'the input-layer sizing rule came back in the video branch')
+
+  assert.match(source, /^  resultLayerSize,$/m, 'resultLayerSize is not imported')
 })
