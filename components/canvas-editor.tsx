@@ -4167,7 +4167,10 @@ export function CanvasEditor() {
         } : j))
       } else if (result.id && (result.status === "IN_QUEUE" || result.status === "IN_PROGRESS")) {
         // Job queued on the local worker - /status long-polls until the job finishes
-        setTimeout(async () => {
+        // RunPod's /status can return IN_PROGRESS immediately, and the worker
+        // may refuse connections while a long job is using the GPU. Poll until
+        // the job is terminal instead of checking exactly once after 1 second.
+        const pollStatus = async (attempt = 0) => {
           try {
             const candidates = [service.apiUrl]
             try {
@@ -4176,7 +4179,6 @@ export function CanvasEditor() {
               candidates.push(u.toString())
             } catch {}
             let statusResult: any = null
-            let statusRes: Response | null = null
             for (const candidate of candidates) {
               try {
                 const statusResponse = await fetch(`/api/status/${result.id}`, {
@@ -4184,58 +4186,83 @@ export function CanvasEditor() {
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ localApiUrl: candidate }),
                 })
-                statusRes = statusResponse
                 statusResult = await statusResponse.json()
                 break
               } catch (e) {
                 if (candidates.indexOf(candidate) === candidates.length - 1) throw e
               }
             }
-            if (statusResult) {
-              if (statusResult.status === "COMPLETED" && statusResult.output?.result) {
-                setServiceJobs(prev => prev.map(j => j.id === jobId ? {
-                  ...j,
-                  status: "Processing complete!",
-                  apiStatus: "COMPLETED",
-                  progress: 100,
-                  timing: {
-                    delayTime: statusResult.delayTime || 0,
-                    executionTime: statusResult.executionTime || 0
-                  }
-                } : j))
-                await handleServiceResult(statusResult.output.result, service.name, {
+            if (!statusResult) throw new Error("no status response")
+
+            const jobMissing = statusResult.status === "FAILED" && /job id not found/i.test(String(statusResult.error || ""))
+            if (jobMissing && attempt < 20) {
+              setServiceJobs(prev => prev.map(j => j.id === jobId ? {
+                ...j, status: "Processing...", apiStatus: "IN_PROGRESS", progress: 80, polling: true
+              } : j))
+              setTimeout(() => pollStatus(attempt + 1), 3000)
+              return
+            }
+
+            if (statusResult.status === "COMPLETED" && statusResult.output?.result) {
+              setServiceJobs(prev => prev.map(j => j.id === jobId ? {
+                ...j,
+                status: "Processing complete!",
+                apiStatus: "COMPLETED",
+                progress: 100,
+                polling: false,
+                timing: {
                   delayTime: statusResult.delayTime || 0,
                   executionTime: statusResult.executionTime || 0
-                }, service.prompt || service.positive_prompt || '', service.instruction || '', service, jobId, newJob, statusResult.billing)
-              } else if (statusResult.status === "FAILED") {
-                setServiceJobs(prev => prev.map(j => j.id === jobId ? {
-                  ...j,
-                  status: "Processing failed",
-                  apiStatus: "FAILED",
-                  progress: 100,
-                  result: { error: true, message: processErrorMessage(statusResult.error || "Job failed") }
-                } : j))
-              } else {
-                // Still in progress or unknown status
-                setServiceJobs(prev => prev.map(j => j.id === jobId ? {
-                  ...j,
-                  status: "Processing...",
-                  apiStatus: statusResult.status || "IN_PROGRESS",
-                  progress: 80
-                } : j))
-              }
+                }
+              } : j))
+              await handleServiceResult(statusResult.output.result, service.name, {
+                delayTime: statusResult.delayTime || 0,
+                executionTime: statusResult.executionTime || 0
+              }, service.prompt || service.positive_prompt || '', service.instruction || '', service, jobId, newJob, statusResult.billing)
+              return
             }
-          } catch (error) {
-            console.error('Status check error:', error)
+
+            if (statusResult.status === "FAILED") {
+              setServiceJobs(prev => prev.map(j => j.id === jobId ? {
+                ...j,
+                status: "Processing failed",
+                apiStatus: "FAILED",
+                progress: 100,
+                polling: false,
+                result: { error: true, message: processErrorMessage(statusResult.error || "Job failed") }
+              } : j))
+              return
+            }
+
+            // Still in progress: keep polling.
             setServiceJobs(prev => prev.map(j => j.id === jobId ? {
               ...j,
-              status: "Status check failed",
-              apiStatus: "FAILED",
-              progress: 100,
-              result: { error: true, message: "Failed to check job status" }
+              status: "Processing...",
+              apiStatus: statusResult.status || "IN_PROGRESS",
+              progress: 80,
+              polling: true
             } : j))
+            if (attempt < 2400) setTimeout(() => pollStatus(attempt + 1), 3000)
+          } catch (error) {
+            console.error('Status check error:', error)
+            if (attempt < 2400) {
+              setServiceJobs(prev => prev.map(j => j.id === jobId ? {
+                ...j, status: "Processing...", apiStatus: "IN_PROGRESS", progress: 80, polling: true
+              } : j))
+              setTimeout(() => pollStatus(attempt + 1), 3000)
+            } else {
+              setServiceJobs(prev => prev.map(j => j.id === jobId ? {
+                ...j,
+                status: "Status check failed",
+                apiStatus: "FAILED",
+                progress: 100,
+                polling: false,
+                result: { error: true, message: "Failed to check job status" }
+              } : j))
+            }
           }
-        }, 1000) // Check status after 1 second
+        }
+        setTimeout(() => pollStatus(0), 1000)
 
         setServiceJobs(prev => prev.map(j => j.id === jobId ? {
           ...j,
