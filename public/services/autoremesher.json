@@ -1,0 +1,127 @@
+[
+  {
+    "home": true,
+    "id": "autoremesher",
+    "name": "AutoRemesher",
+    "description": "A dense sculpt in, clean all-quad topology out: AutoRemesher's field-aligned remesher rebuilds the surface as an even quad mesh at the polygon budget you pick, returned as a GLB.",
+    "category": "3d",
+    "icon": "Box",
+    "inputTypes": [
+      "file"
+    ],
+    "workerId": "",
+    "cost": "0",
+    "processingTime": "120",
+    "delay": "12000",
+    "overview": "AutoRemesher (MIT, by the Dust3D author) turns a high-polygon triangle mesh into quad topology. It decimates the input, builds a smooth cross field over the surface, extracts the singularity and feature structure from it, parameterizes each patch and cuts the surface into quads whose size follows the target count — so the result is a single connected quad mesh at a predictable density instead of a voxel retopo or a triangle soup. Sharp edges above the dihedral threshold are preserved as feature loops, and Adaptivity / Anisotropy let the quads grow where the surface is flat and shrink along curvature and ridges. Drop a GLB on the canvas, select that 3D layer, set the quad budget and Run. The result is a GLB for the canvas viewer; the untriangulated quad OBJ is returned alongside it, because glTF can only carry triangles and a DCC tool wants the real quads. No textures or UVs are transferred — this cartridge produces topology, so it is the step before you re-texture or project UVs.",
+    "divisible": 32,
+    "inputs": [
+      {
+        "name": "input_mesh",
+        "accepts": [
+          "glb",
+          "model/gltf-binary"
+        ],
+        "bind": "primary",
+        "required": true
+      }
+    ],
+    "returns": {
+      "type": "model/gltf-binary",
+      "ext": "glb",
+      "layer": "3d"
+    },
+    "parameters": [
+      {
+        "name": "job_id",
+        "type": "string",
+        "label": "Job ID",
+        "required": false,
+        "defaultValue": "",
+        "ui": false
+      },
+      {
+        "name": "input_mesh",
+        "type": "file",
+        "label": "Input Mesh",
+        "required": true,
+        "ui": false,
+        "description": "The selected 3D layer is uploaded here automatically."
+      },
+      {
+        "name": "target_quads",
+        "type": "slider",
+        "label": "Target Quads",
+        "defaultValue": 20000,
+        "min": 1000,
+        "max": 200000,
+        "step": 1000,
+        "ui": true,
+        "description": "Quad budget for the whole surface. The remesher hits it within a few percent."
+      },
+      {
+        "name": "edge_scaling",
+        "type": "slider",
+        "label": "Edge Scaling",
+        "defaultValue": 1,
+        "min": 1,
+        "max": 4,
+        "step": 0.1,
+        "ui": true,
+        "description": "How much denser the quads get along feature edges. 1 keeps the target density uniform."
+      },
+      {
+        "name": "sharp_edge",
+        "type": "slider",
+        "label": "Sharp Edges",
+        "defaultValue": 90,
+        "min": 30,
+        "max": 180,
+        "step": 5,
+        "ui": true,
+        "description": "Dihedral angle threshold in degrees. Edges sharper than this are preserved as feature loops."
+      },
+      {
+        "name": "adaptivity",
+        "type": "slider",
+        "label": "Adaptivity",
+        "defaultValue": 1,
+        "min": 0,
+        "max": 1,
+        "step": 0.05,
+        "ui": true,
+        "description": "Curvature-adaptive quad density. 0 is uniform, 1 puts the finer quads in high-curvature areas."
+      },
+      {
+        "name": "anisotropy",
+        "type": "slider",
+        "label": "Anisotropy",
+        "defaultValue": 1,
+        "min": 0,
+        "max": 1,
+        "step": 0.05,
+        "ui": false,
+        "description": "Curvature-adaptive elongation. 0 keeps square quads, 1 stretches them along the flatter direction on tubes and ridges."
+      },
+      {
+        "name": "smooth_normal",
+        "type": "slider",
+        "label": "Smooth Normal",
+        "defaultValue": 0,
+        "min": 0,
+        "max": 180,
+        "step": 5,
+        "ui": false,
+        "description": "Smooth normal angle threshold in degrees. 0 remeshes the faceted surface as-is; larger values respect the original vertex normals."
+      },
+      {
+        "name": "timeout",
+        "type": "number",
+        "label": "Timeout",
+        "defaultValue": 1800,
+        "ui": false,
+        "description": "Seconds the remesher may run before the job is failed."
+      }
+    ]
+  }
+]

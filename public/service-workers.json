@@ -362,5 +362,29 @@
         "s3_bucket_folder": "output"
       }
     }
+  },
+  {
+    "id": "autoremesher",
+    "name": "AutoRemesher",
+    "catalog": "services/autoremesher.json",
+    "apiUrl": "http://host.docker.internal:8015",
+    "uploadUrl": "http://localhost:9000",
+    "workerUploadUrl": "http://host.docker.internal:9000",
+    "container": {
+      "name": "autoremesher-cartridge",
+      "image": "camenduru/autoremesher-cartridge:latest",
+      "port": 8015,
+      "hostPort": 8015,
+      "gpus": false,
+      "command": ["python3", "/app/worker_runpod.py", "--rp_serve_api", "--rp_api_port", "8015", "--rp_api_host", "0.0.0.0", "--rp_log_level", "INFO"],
+      "env": {
+        "s3_access_key_id": "${s3_access_key_id}",
+        "s3_secret_access_key": "${s3_secret_access_key}",
+        "s3_endpoint_url": "http://host.docker.internal:9000",
+        "s3_region_name": "us-east-1",
+        "s3_bucket_name": "tost",
+        "s3_bucket_folder": "output"
+      }
+    }
   }
 ]

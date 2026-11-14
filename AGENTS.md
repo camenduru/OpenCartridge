@@ -296,7 +296,7 @@ The format is versioned and additive; read `docs/cartridge-schema.md` before inv
 Ports are assigned by hand and must not collide: `8000` 3x3-sprite-sheet, `8001` loop-hero-style, `8002`
 corridorkey, `8003` idol, `8004` breeze-tts, `8005` yue2, `8006` moss-soundeffect, `8007` supra-tex, `8008`
 skintokens, `8009` unimate, `8010` glb2vrm, `8011` vrmexmr, `8012` uniforge3d, `8013` kimodo,
-`8014` minimax-h3-image-edit. **Next free port is 8015.**
+`8014` minimax-h3-image-edit, `8015` autoremesher. **Next free port is 8016.**
 
 ```json
 {
@@ -375,6 +375,8 @@ cd OpenCartridge && npm test        # frozen catalogs + shipped catalogs must pa
 ```
 
 When a new catalog ships, **add** a frozen copy under `tests/fixtures/cartridges/v1/`. Never edit an existing fixture.
+A fixture is a *v1-shaped* snapshot — no `returns`, no `inputs`, and only a magic input name (`input_image`, …) — so a
+catalog that declares its own result type or takes `input_mesh` ships without one; the shipped-catalog test covers it.
 
 ---
 
@@ -407,7 +409,7 @@ When a new catalog ships, **add** a frozen copy under `tests/fixtures/cartridges
 - [ ] catalogue entry: minimal UI params, `inputs`, `returns`, public example URLs
 - [ ] registry entry: correct port/hostPort, `${ENV}` s3 block, `container` spec
 - [ ] Docker image and container names end with `-cartridge`
-- [ ] port not already taken (next free: 8015)
+- [ ] port not already taken (next free: 8016)
 - [ ] built, ran, `/run` → `/status` → artifact fetched
 - [ ] through the app: `/api/ai-services`, `/api/workers`, `/api/run`, layer appears
 - [ ] `npm test` green; fixture added if a catalog was added
